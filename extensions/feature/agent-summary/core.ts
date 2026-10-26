@@ -25,8 +25,18 @@ export type AgentSummaryData = {
 	durationMs: number;
 	inputTokens: number;
 	outputTokens: number;
+	/** 缓存命中读取的 token。 */
+	cacheRead: number;
+	/** 写入缓存的 token。 */
+	cacheWrite: number;
+	/** 思考 token（output 子集，provider 上报才有）。 */
+	reasoning: number;
 	/** 本回合累计成本；模型未配置单价时为 0。 */
 	cost: number;
+	/** 模型请求轮数。 */
+	turns: number;
+	/** 最后一轮使用的模型 id。 */
+	model: string;
 };
 
 export function classifyTool(toolName: string): AgentToolCategory {
@@ -51,7 +61,23 @@ function toolPath(args?: Record<string, unknown> | null): string | undefined {
 export interface UsageLike {
 	input?: number;
 	output?: number;
+	cacheRead?: number;
+	cacheWrite?: number;
+	/** 思考 token（output 的子集，provider 上报才有）。 */
+	reasoning?: number;
 	cost?: { total?: number };
+}
+
+/** 摘要渲染配置：段的顺序与开关、分隔符、图标。 */
+export interface AgentSummaryViewConfig {
+	keys?: readonly string[];
+	sep?: string;
+	icons?: boolean;
+}
+
+/** 从全局 config 取出的完整摘要配置（含显示阈值）。 */
+export interface AgentSummaryFeatureConfig extends AgentSummaryViewConfig {
+	minTools: number;
 }
 
 /** 累积一次 agent 回合的工具统计；agent_start 时新建实例。 */
@@ -65,7 +91,12 @@ export class AgentRunSummary {
 	failedCount = 0;
 	inputTokens = 0;
 	outputTokens = 0;
+	cacheReadTokens = 0;
+	cacheWriteTokens = 0;
+	reasoningTokens = 0;
 	cost = 0;
+	turns = 0;
+	model = "";
 
 	readonly startedAt: number;
 
@@ -100,11 +131,16 @@ export class AgentRunSummary {
 		if (isError) this.failedCount++;
 	}
 
-	/** turn_end 时调用；累加该轮 assistant 消息的 usage。 */
-	recordUsage(usage?: UsageLike | null): void {
+	/** turn_end 时调用；累加该轮 assistant 消息的 usage，并记录轮数与模型。 */
+	recordUsage(usage?: UsageLike | null, model?: string): void {
+		this.turns++;
+		if (model) this.model = model;
 		if (!usage) return;
 		this.inputTokens += usage.input ?? 0;
 		this.outputTokens += usage.output ?? 0;
+		this.cacheReadTokens += usage.cacheRead ?? 0;
+		this.cacheWriteTokens += usage.cacheWrite ?? 0;
+		this.reasoningTokens += usage.reasoning ?? 0;
 		this.cost += usage.cost?.total ?? 0;
 	}
 
@@ -119,17 +155,20 @@ export class AgentRunSummary {
 			durationMs: now - this.startedAt,
 			inputTokens: this.inputTokens,
 			outputTokens: this.outputTokens,
+			cacheRead: this.cacheReadTokens,
+			cacheWrite: this.cacheWriteTokens,
+			reasoning: this.reasoningTokens,
 			cost: this.cost,
+			turns: this.turns,
+			model: this.model,
 		};
 	}
 }
 
-const plural = (count: number) => (count === 1 ? "" : "s");
-
-/** token 数缩写：980 → "980"，12.4k → "12.4k"，210345 → "210k"。 */
+/** token 数缩写：980 → "980"，12.4k → "12.4k"，210345 → "210k"（去尾零）。 */
 export function formatTokens(count: number): string {
 	if (count >= 100_000) return `${Math.round(count / 1000)}k`;
-	if (count >= 1000) return `${(count / 1000).toFixed(1)}k`;
+	if (count >= 1000) return `${parseFloat((count / 1000).toFixed(1))}k`;
 	return String(count);
 }
 
@@ -140,32 +179,70 @@ export function formatCost(cost: number): string {
 	return `$${cost.toFixed(2)}`;
 }
 
-/** emoji 分段风输出：⚡ 耗时 · ↑输入 ↓输出 tok · 🔧 工具 · 💰 成本 · ✗ 失败。 */
-function summaryParts(data: AgentSummaryData): string[] {
+/** emoji 分段风输出；段顺序由 options.keys 决定，缺省段自动省略。 */
+function summaryParts(data: AgentSummaryData, options: AgentSummaryViewConfig): string[] {
+	const icons = options.icons !== false;
 	const parts: string[] = [];
 	const duration = formatDuration(data.durationMs);
-	if (duration) parts.push(`⚡ ${duration}`);
-	if (data.inputTokens || data.outputTokens) {
-		parts.push(`↑${formatTokens(data.inputTokens)} ↓${formatTokens(data.outputTokens)} tok`);
+	for (const key of options.keys ?? DEFAULT_SUMMARY_KEYS) {
+		switch (key) {
+			case "duration":
+				if (duration) parts.push(icons ? `⚡ ${duration}` : duration);
+				break;
+			case "tokens":
+				if (data.inputTokens || data.outputTokens) {
+					parts.push(`↑${formatTokens(data.inputTokens)} ↓${formatTokens(data.outputTokens)} tok`);
+				}
+				break;
+			case "cache":
+				// ↗ = 写入缓存（上传），↘ = 缓存命中（下载使用）
+				if (data.cacheRead || data.cacheWrite) {
+					parts.push(`↗${formatTokens(data.cacheWrite)} ↘${formatTokens(data.cacheRead)} cache`);
+				}
+				break;
+			case "reasoning":
+				if (data.reasoning)
+					parts.push(
+						icons ? `🧠 ${formatTokens(data.reasoning)}` : `think ${formatTokens(data.reasoning)}`,
+					);
+				break;
+			case "turns":
+				if (data.turns) parts.push(icons ? `🔁${data.turns}` : `${data.turns} turns`);
+				break;
+			case "tools": {
+				const tools: string[] = [];
+				if (data.commands) tools.push(`bash×${data.commands}`);
+				if (data.edits) tools.push(`edit×${data.edits}`);
+				if (data.reads) tools.push(`read×${data.reads}`);
+				if (data.writes) tools.push(`write×${data.writes}`);
+				if (data.others) tools.push(`other×${data.others}`);
+				if (tools.length) parts.push(icons ? `🔧 ${tools.join(" ")}` : tools.join(" "));
+				break;
+			}
+			case "cost": {
+				const cost = formatCost(data.cost);
+				if (cost) parts.push(icons ? `💰 ${cost}` : cost);
+				break;
+			}
+			case "failed":
+				if (data.failed) parts.push(`✗${data.failed}`);
+				break;
+			case "model":
+				if (data.model) parts.push(icons ? `🤖 ${data.model}` : data.model);
+				break;
+		}
 	}
-	const tools: string[] = [];
-	if (data.commands) tools.push(`bash×${data.commands}`);
-	if (data.edits) tools.push(`edit×${data.edits}`);
-	if (data.reads) tools.push(`read×${data.reads}`);
-	if (data.writes) tools.push(`write×${data.writes}`);
-	if (data.others) tools.push(`other×${data.others}`);
-	if (tools.length) parts.push(`🔧 ${tools.join(" ")}`);
-	const cost = formatCost(data.cost);
-	if (cost) parts.push(`💰 ${cost}`);
-	if (data.failed) parts.push(`✗${data.failed}`);
 	return parts;
 }
+
+const DEFAULT_SUMMARY_KEYS = ["duration", "tokens", "cache", "tools", "cost", "failed"];
 
 export function summaryMarkdown(
 	data: AgentSummaryData,
 	colors: { success: string; failed: string } = { success: "", failed: "" },
+	options: AgentSummaryViewConfig = {},
 ): string {
-	const parts = summaryParts(data);
+	const parts = summaryParts(data, options);
 	if (parts.length === 0) return "";
 	// 数字/计数用 success 色，失败段用 failed 色。
 	const paintPart = (part: string) => {
@@ -173,7 +250,7 @@ export function summaryMarkdown(
 		if (!code) return part;
 		return part.replace(/(\d+(?:\.\d+)?k?)/, `${code}$1\x1b[0m`);
 	};
-	const line = parts.map(paintPart).join(" · ");
+	const line = parts.map(paintPart).join(options.sep ?? " · ");
 	return `> *${line}*`;
 }
 
@@ -181,13 +258,15 @@ export function summaryMarkdown(
  * 绑定 pi 事件到摘要统计：
  * - agent_start 重置
  * - tool_execution_start / end 累计
- * - turn_end 累加该轮 assistant 消息的 usage（token 与成本）
- * - agent_end 回调（无工具且无输出时跳过）
+ * - turn_end 累加该轮 assistant 消息的 usage（token/缓存/成本）与轮数、模型
+ * - agent_end 回调（minTools=0 时无工具但有输出也显示）
  */
 export function bindAgentSummary(
 	pi: ExtensionAPI,
 	onSummary: (data: AgentSummaryData) => void,
+	options: { minTools?: number } = {},
 ): void {
+	const minTools = options.minTools ?? 0;
 	let summary = new AgentRunSummary();
 	pi.on("agent_start", async () => {
 		summary = new AgentRunSummary();
@@ -199,10 +278,14 @@ export function bindAgentSummary(
 		summary.recordToolResult(event.isError === true);
 	});
 	pi.on("turn_end", async (event) => {
-		const message = event.message as { role?: string; usage?: UsageLike } | undefined;
-		if (message?.role === "assistant") summary.recordUsage(message.usage);
+		const message = event.message as
+			| { role?: string; usage?: UsageLike; model?: string }
+			| undefined;
+		if (message?.role === "assistant") summary.recordUsage(message.usage, message.model);
 	});
 	pi.on("agent_end", async () => {
-		if (summary.toolCount > 0 || summary.outputTokens > 0) onSummary(summary.snapshot());
+		const meetsMin = summary.toolCount >= minTools;
+		const hasContent = minTools > 0 || summary.toolCount > 0 || summary.outputTokens > 0;
+		if (meetsMin && hasContent) onSummary(summary.snapshot());
 	});
 }

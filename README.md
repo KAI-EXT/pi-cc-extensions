@@ -93,6 +93,12 @@ pi install git:github.com/minuque/pi-cc-extensions
   "footerLine1Keys": ["model", "context", "cache", "rate", "cost", "pi-usage"], // 每行芯片顺序；内置项与插件同一套排布
   "footerLine2Keys": ["cwd", "git"],       // cwd：目录和会话名；git：分支和改动。可换到任意行
   "footerLine3Keys": []                    // 有可见芯片才占行
+
+  // agent-summary（回合摘要行）
+  "agentSummaryKeys": ["duration", "tokens", "cache", "tools", "cost", "failed"], // 段顺序与开关；可选：duration/tokens/cache/reasoning/turns/model/tools/cost/failed
+  "agentSummarySep": " · ",                // 段分隔符
+  "agentSummaryIcons": true,               // emoji 图标；false 为纯文本
+  "agentSummaryMinTools": 0                // 触发显示的最小工具数；0 = 有任意内容就显示，2 = 恢复旧行为
 }
 ```
 

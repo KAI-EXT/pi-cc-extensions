@@ -1,3 +1,4 @@
+import type { AgentSummaryFeatureConfig } from "../feature/agent-summary/core.ts";
 import type { CompactThinkingConfig } from "../feature/compact-thinking.ts";
 import {
 	DEFAULT_FOOTER_CHIP_LAYOUT,
@@ -95,6 +96,14 @@ export type Config = {
 	footerLine1Keys: string[];
 	footerLine2Keys: string[];
 	footerLine3Keys: string[];
+	/** agent-summary 摘要段的顺序与开关。 */
+	agentSummaryKeys: string[];
+	/** agent-summary 段分隔符。 */
+	agentSummarySep: string;
+	/** agent-summary emoji 图标开关。 */
+	agentSummaryIcons: boolean;
+	/** agent-summary 触发显示的最小工具数；0 = 有任意内容就显示。 */
+	agentSummaryMinTools: number;
 };
 
 const AGENT_DIR = process.env.PI_CODING_AGENT_DIR ?? join(homedir(), ".pi", "agent");
@@ -135,6 +144,22 @@ export const EXCLUDE_RENDERER_CANDIDATES = [
 	"wait",
 ];
 
+export const DEFAULT_AGENT_SUMMARY_KEYS = [
+	"duration",
+	"tokens",
+	"cache",
+	"tools",
+	"cost",
+	"failed",
+];
+/** agent-summary 支持的段 key；未知 key 在 normalize 时丢弃。 */
+export const AGENT_SUMMARY_KEY_VALUES = [
+	...DEFAULT_AGENT_SUMMARY_KEYS,
+	"reasoning",
+	"turns",
+	"model",
+];
+
 export const DEFAULT_CONFIG: Config = {
 	mode: "on",
 	excludeRenderers: [],
@@ -170,6 +195,10 @@ export const DEFAULT_CONFIG: Config = {
 	footerCurrencyRate: null,
 	footerNerdIcons: true,
 	footerGitStatsMode: "working",
+	agentSummaryKeys: [...DEFAULT_AGENT_SUMMARY_KEYS],
+	agentSummarySep: " · ",
+	agentSummaryIcons: true,
+	agentSummaryMinTools: 0,
 	...DEFAULT_FOOTER_CHIP_LAYOUT,
 };
 
@@ -207,6 +236,19 @@ function normalizeFooterCurrencyRate(value: unknown): number | null {
 	if (value === undefined || value === null || value === "") return null;
 	const n = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
 	return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/** agentSummaryKeys：只保留支持的 key，去重；非法/空回退默认。 */
+function normalizeAgentSummaryKeys(value: unknown): string[] {
+	if (!Array.isArray(value)) return [...DEFAULT_CONFIG.agentSummaryKeys];
+	const keys = [
+		...new Set(
+			value.filter(
+				(key): key is string => typeof key === "string" && AGENT_SUMMARY_KEY_VALUES.includes(key),
+			),
+		),
+	];
+	return keys.length > 0 ? keys : [...DEFAULT_CONFIG.agentSummaryKeys];
 }
 
 export function normalizeConfig(input: unknown): Config {
@@ -313,6 +355,18 @@ export function normalizeConfig(input: unknown): Config {
 			DEFAULT_CONFIG.footerGitStatsMode,
 		),
 		...normalizeFooterChipLayout(source),
+		agentSummaryKeys: normalizeAgentSummaryKeys(source.agentSummaryKeys),
+		agentSummarySep:
+			typeof source.agentSummarySep === "string" && source.agentSummarySep.length > 0
+				? source.agentSummarySep
+				: DEFAULT_CONFIG.agentSummarySep,
+		agentSummaryIcons: source.agentSummaryIcons !== false,
+		agentSummaryMinTools: pickPositiveInt(
+			source.agentSummaryMinTools,
+			DEFAULT_CONFIG.agentSummaryMinTools,
+			0,
+			100,
+		),
 	};
 }
 
@@ -321,6 +375,15 @@ export function getCompactThinkingConfig(source: Config = config): CompactThinki
 		useSummaryTitlesAsThinkingTitle: source.useSummaryTitlesAsThinkingTitle,
 		previewLines: source.previewLines,
 		animationIntervalMs: source.animationIntervalMs,
+	};
+}
+
+export function getAgentSummaryConfig(source: Config = config): AgentSummaryFeatureConfig {
+	return {
+		keys: source.agentSummaryKeys,
+		sep: source.agentSummarySep,
+		icons: source.agentSummaryIcons,
+		minTools: source.agentSummaryMinTools,
 	};
 }
 
@@ -413,6 +476,9 @@ export function formatConfigStatus(source: Config = config): string {
 		`footerRate=${source.footerCurrencyRate ?? "-"}`,
 		`footerIcons=${source.footerNerdIcons ? "nerd" : "plain"}`,
 		`footerGitStats=${source.footerGitStatsMode}`,
+		`agentSummaryKeys=[${source.agentSummaryKeys.join(",")}]`,
+		`agentSummaryIcons=${source.agentSummaryIcons ? "on" : "off"}`,
+		`agentSummaryMinTools=${source.agentSummaryMinTools}`,
 		formatFooterChipSummary(source),
 	].join(" · ");
 }
