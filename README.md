@@ -110,7 +110,7 @@ pi install git:github.com/minuque/pi-cc-extensions
 | --- | --- | --- | --- |
 | `duration` | `⚡ 9m55s` | 回合墙钟耗时 | — |
 | `tokens` | `↑12.4k ↓3.1k tok` | 输入 / 输出 token | 无 token 上报 |
-| `cache` | `↗45k ↘210k cache` | 缓存：↗ 写入（上传）、↘ 命中读取（下载） | provider 未上报缓存 |
+| `cache` | `↗45k ↘210k cache 91%` | 缓存：↗ 写入（上传）、↘ 命中读取（下载）；末尾为命中率（命中率 = 命中 ÷（输入 + 写入 + 命中），回合累计值） | provider 未上报缓存 |
 | `reasoning` | `🧠 1.8k` | 思考 token（`output` 的子集） | provider 未上报 |
 | `turns` | `🔁4` | 模型请求轮数 | 0 轮 |
 | `model` | `🤖 glm-5.3-flash` | 最后一轮使用的模型 | — |
@@ -121,7 +121,7 @@ pi install git:github.com/minuque/pi-cc-extensions
 示例（`agentSummaryIcons: false` 为纯文本模式，emoji 前缀消失）：
 
 ```
-│ ⚡ 9m55s · ↑12.4k ↓3.1k tok · ↗45k ↘210k cache · 🔧 bash×19 edit×6 · 💰 $0.05 · ✗1
+│ ⚡ 9m55s · ↑12.4k ↓3.1k tok · ↗45k ↘210k cache 91% · 🔧 bash×19 edit×6 · 💰 $0.05 · ✗1
 ```
 
 `agentSummaryMinTools` 控制整行是否出现：`0`（默认）只要回合有工具调用或 token 输出就显示；设为 `2` 恢复旧行为（工具数 ≥ 2 才显示）。

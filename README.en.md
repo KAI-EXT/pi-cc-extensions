@@ -110,7 +110,7 @@ The turn summary line renders segments in `agentSummaryKeys` order; segments wit
 | --- | --- | --- | --- |
 | `duration` | `⚡ 9m55s` | Wall-clock turn duration | — |
 | `tokens` | `↑12.4k ↓3.1k tok` | Input / output tokens | no token usage reported |
-| `cache` | `↗45k ↘210k cache` | Cache: ↗ written (upload), ↘ cache-hit read (download) | provider reports no cache |
+| `cache` | `↗45k ↘210k cache 91%` | Cache: ↗ written (upload), ↘ cache-hit read (download); trailing % is the hit rate (hit rate = reads ÷ (input + writes + reads), accumulated over the turn) | provider reports no cache |
 | `reasoning` | `🧠 1.8k` | Reasoning tokens (subset of `output`) | provider reports none |
 | `turns` | `🔁4` | Model request count | 0 turns |
 | `model` | `🤖 glm-5.3-flash` | Model of the last turn | — |
@@ -121,7 +121,7 @@ The turn summary line renders segments in `agentSummaryKeys` order; segments wit
 Example (`agentSummaryIcons: false` drops the emoji prefixes):
 
 ```
-│ ⚡ 9m55s · ↑12.4k ↓3.1k tok · ↗45k ↘210k cache · 🔧 bash×19 edit×6 · 💰 $0.05 · ✗1
+│ ⚡ 9m55s · ↑12.4k ↓3.1k tok · ↗45k ↘210k cache 91% · 🔧 bash×19 edit×6 · 💰 $0.05 · ✗1
 ```
 
 `agentSummaryMinTools` gates the whole line: `0` (default) shows whenever the turn had tool calls or token output; set `2` for the legacy behavior (≥ 2 tool calls).

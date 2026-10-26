@@ -194,12 +194,16 @@ function summaryParts(data: AgentSummaryData, options: AgentSummaryViewConfig): 
 					parts.push(`↑${formatTokens(data.inputTokens)} ↓${formatTokens(data.outputTokens)} tok`);
 				}
 				break;
-			case "cache":
-				// ↗ = 写入缓存（上传），↘ = 缓存命中（下载使用）
+			case "cache": {
+				// ↗ = 写入缓存（上传），↘ = 缓存命中（下载使用）；命中率与 footer 同算法（回合累计值）
 				if (data.cacheRead || data.cacheWrite) {
-					parts.push(`↗${formatTokens(data.cacheWrite)} ↘${formatTokens(data.cacheRead)} cache`);
+					let label = `↗${formatTokens(data.cacheWrite)} ↘${formatTokens(data.cacheRead)} cache`;
+					const denom = data.inputTokens + data.cacheWrite + data.cacheRead;
+					if (denom > 0) label += ` ${Math.floor((data.cacheRead * 100) / denom)}%`;
+					parts.push(label);
 				}
 				break;
+			}
 			case "reasoning":
 				if (data.reasoning)
 					parts.push(
