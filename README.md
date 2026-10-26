@@ -102,6 +102,30 @@ pi install git:github.com/minuque/pi-cc-extensions
 }
 ```
 
+#### `agentSummaryKeys` 可选段
+
+每回合结束的摘要行按 `agentSummaryKeys` 的顺序渲染；某段没有数据时自动省略，不占位。
+
+| key | 显示效果 | 说明 | 省略条件 |
+| --- | --- | --- | --- |
+| `duration` | `⚡ 9m55s` | 回合墙钟耗时 | — |
+| `tokens` | `↑12.4k ↓3.1k tok` | 输入 / 输出 token | 无 token 上报 |
+| `cache` | `↗45k ↘210k cache` | 缓存：↗ 写入（上传）、↘ 命中读取（下载） | provider 未上报缓存 |
+| `reasoning` | `🧠 1.8k` | 思考 token（`output` 的子集） | provider 未上报 |
+| `turns` | `🔁4` | 模型请求轮数 | 0 轮 |
+| `model` | `🤖 glm-5.3-flash` | 最后一轮使用的模型 | — |
+| `tools` | `🔧 bash×19 edit×6 read×4` | bash 按调用计，read/edit/write 按文件去重，其余归 `other×N` | 无工具调用 |
+| `cost` | `💰 $0.05` | 本回合累计成本 | 模型未配置单价 |
+| `failed` | `✗1` | 失败的工具调用数 | 0 次失败 |
+
+示例（`agentSummaryIcons: false` 为纯文本模式，emoji 前缀消失）：
+
+```
+│ ⚡ 9m55s · ↑12.4k ↓3.1k tok · ↗45k ↘210k cache · 🔧 bash×19 edit×6 · 💰 $0.05 · ✗1
+```
+
+`agentSummaryMinTools` 控制整行是否出现：`0`（默认）只要回合有工具调用或 token 输出就显示；设为 `2` 恢复旧行为（工具数 ≥ 2 才显示）。
+
 > [!TIP]
 > **全屏模式**：展开态 diff 全量显示。Input/Output 超行时末行给 `… +N more lines`，单击看全量，再击收起。
 
