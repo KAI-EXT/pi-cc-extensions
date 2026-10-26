@@ -23,6 +23,10 @@ export type AgentSummaryData = {
 	others: number;
 	failed: number;
 	durationMs: number;
+	inputTokens: number;
+	outputTokens: number;
+	/** 本回合累计成本；模型未配置单价时为 0。 */
+	cost: number;
 };
 
 export function classifyTool(toolName: string): AgentToolCategory {
@@ -43,6 +47,13 @@ function toolPath(args?: Record<string, unknown> | null): string | undefined {
 	return nonEmptyString(path) ? path : undefined;
 }
 
+/** turn_end 消息上关注的 usage 字段。 */
+export interface UsageLike {
+	input?: number;
+	output?: number;
+	cost?: { total?: number };
+}
+
 /** 累积一次 agent 回合的工具统计；agent_start 时新建实例。 */
 export class AgentRunSummary {
 	toolCount = 0;
@@ -52,6 +63,9 @@ export class AgentRunSummary {
 	writeFiles = new Set<string>();
 	otherCount = 0;
 	failedCount = 0;
+	inputTokens = 0;
+	outputTokens = 0;
+	cost = 0;
 
 	readonly startedAt: number;
 
@@ -86,6 +100,14 @@ export class AgentRunSummary {
 		if (isError) this.failedCount++;
 	}
 
+	/** turn_end 时调用；累加该轮 assistant 消息的 usage。 */
+	recordUsage(usage?: UsageLike | null): void {
+		if (!usage) return;
+		this.inputTokens += usage.input ?? 0;
+		this.outputTokens += usage.output ?? 0;
+		this.cost += usage.cost?.total ?? 0;
+	}
+
 	snapshot(now = Date.now()): AgentSummaryData {
 		return {
 			commands: this.commandCount,
@@ -95,21 +117,47 @@ export class AgentRunSummary {
 			others: this.otherCount,
 			failed: this.failedCount,
 			durationMs: now - this.startedAt,
+			inputTokens: this.inputTokens,
+			outputTokens: this.outputTokens,
+			cost: this.cost,
 		};
 	}
 }
 
 const plural = (count: number) => (count === 1 ? "" : "s");
 
-/** 输出顺序：bash → read → edit → write → other → failed。 */
+/** token 数缩写：980 → "980"，12.4k → "12.4k"，210345 → "210k"。 */
+export function formatTokens(count: number): string {
+	if (count >= 100_000) return `${Math.round(count / 1000)}k`;
+	if (count >= 1000) return `${(count / 1000).toFixed(1)}k`;
+	return String(count);
+}
+
+/** 成本缩写：<0.01 保留有效数字（去尾零），其余 2 位小数。 */
+export function formatCost(cost: number): string {
+	if (cost <= 0) return "";
+	if (cost < 0.01) return `$${parseFloat(cost.toFixed(4))}`;
+	return `$${cost.toFixed(2)}`;
+}
+
+/** emoji 分段风输出：⚡ 耗时 · ↑输入 ↓输出 tok · 🔧 工具 · 💰 成本 · ✗ 失败。 */
 function summaryParts(data: AgentSummaryData): string[] {
 	const parts: string[] = [];
-	if (data.commands) parts.push(`ran ${data.commands} command${plural(data.commands)}`);
-	if (data.reads) parts.push(`read ${data.reads} file${plural(data.reads)}`);
-	if (data.edits) parts.push(`edited ${data.edits} file${plural(data.edits)}`);
-	if (data.writes) parts.push(`wrote ${data.writes} file${plural(data.writes)}`);
-	if (data.others) parts.push(`${data.others} other tool${plural(data.others)}`);
-	if (data.failed) parts.push(`${data.failed} failed`);
+	const duration = formatDuration(data.durationMs);
+	if (duration) parts.push(`⚡ ${duration}`);
+	if (data.inputTokens || data.outputTokens) {
+		parts.push(`↑${formatTokens(data.inputTokens)} ↓${formatTokens(data.outputTokens)} tok`);
+	}
+	const tools: string[] = [];
+	if (data.commands) tools.push(`bash×${data.commands}`);
+	if (data.edits) tools.push(`edit×${data.edits}`);
+	if (data.reads) tools.push(`read×${data.reads}`);
+	if (data.writes) tools.push(`write×${data.writes}`);
+	if (data.others) tools.push(`other×${data.others}`);
+	if (tools.length) parts.push(`🔧 ${tools.join(" ")}`);
+	const cost = formatCost(data.cost);
+	if (cost) parts.push(`💰 ${cost}`);
+	if (data.failed) parts.push(`✗${data.failed}`);
 	return parts;
 }
 
@@ -119,18 +167,13 @@ export function summaryMarkdown(
 ): string {
 	const parts = summaryParts(data);
 	if (parts.length === 0) return "";
-	const capitalizeFirst = (part: string, first: boolean) => {
-		const verb = part.match(/^[a-z]+/)?.[0] ?? "";
-		return first && verb ? verb[0].toUpperCase() + verb.slice(1) + part.slice(verb.length) : part;
+	// 数字/计数用 success 色，失败段用 failed 色。
+	const paintPart = (part: string) => {
+		const code = part.startsWith("✗") ? colors.failed : colors.success;
+		if (!code) return part;
+		return part.replace(/(\d+(?:\.\d+)?k?)/, `${code}$1\x1b[0m`);
 	};
-	const paintNumber = (code: string, part: string) =>
-		code ? part.replace(/(\d+)/, `${code}$1\x1b[0m`) : part;
-	const text = parts
-		.map((part, index) => capitalizeFirst(part, index === 0))
-		.map((part) => paintNumber(part.endsWith("failed") ? colors.failed : colors.success, part))
-		.join(", ");
-	const duration = formatDuration(data.durationMs);
-	const line = duration ? `${text} · ${duration}` : text;
+	const line = parts.map(paintPart).join(" · ");
 	return `> *${line}*`;
 }
 
@@ -138,7 +181,8 @@ export function summaryMarkdown(
  * 绑定 pi 事件到摘要统计：
  * - agent_start 重置
  * - tool_execution_start / end 累计
- * - agent_end 回调（toolCount < minToolCount 跳过）
+ * - turn_end 累加该轮 assistant 消息的 usage（token 与成本）
+ * - agent_end 回调（无工具且无输出时跳过）
  */
 export function bindAgentSummary(
 	pi: ExtensionAPI,
@@ -154,7 +198,11 @@ export function bindAgentSummary(
 	pi.on("tool_execution_end", async (event) => {
 		summary.recordToolResult(event.isError === true);
 	});
+	pi.on("turn_end", async (event) => {
+		const message = event.message as { role?: string; usage?: UsageLike } | undefined;
+		if (message?.role === "assistant") summary.recordUsage(message.usage);
+	});
 	pi.on("agent_end", async () => {
-		if (summary.toolCount >= 2) onSummary(summary.snapshot());
+		if (summary.toolCount > 0 || summary.outputTokens > 0) onSummary(summary.snapshot());
 	});
 }
