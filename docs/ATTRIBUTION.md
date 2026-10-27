@@ -2,7 +2,8 @@
 
 The sliding-window live token-rate engine in `extensions/feature/shell/token-rate.ts`
 (configurable window pruning, burst/stall handling, and the minimum span clamp)
-is adapted from [gsanhueza/pi-token-speed](https://github.com/gsanhueza/pi-token-speed).
+is adapted from [gsanhueza/pi-token-speed](https://github.com/gsanhueza/pi-token-speed)
+(upstream master commit `46a3dd432d5b9c7493f69ecd464cc3beeef15178` at time of adaptation).
 
 Copyright (c) gsanhueza and pi-token-speed contributors. Used under the MIT
 License. The upstream license text is reproduced below.
