@@ -54,6 +54,16 @@ describe("token rate", { concurrency: false }, () => {
 		assert.equal(formatTokenRate(1200, 12_340), "avg 1.2k tok/s (TTFT: 12.3s)");
 	});
 
+	test("formatTokenRate paints only the rate value when a painter is given", () => {
+		const paint = (value: string) => `<${value}>`;
+		assert.equal(formatTokenRate(42.4, 0, "average", true, paint), "avg <42> tok/s");
+		assert.equal(formatTokenRate(1234, 0, "average", true, paint), "avg <1.2k> tok/s");
+		assert.equal(
+			formatTokenRate(1234, 812, "live", true, paint),
+			"live <1.2k> tok/s (TTFT: 812ms)",
+		);
+	});
+
 	test("live mode uses the trailing window and holds it through a tool wait", () => {
 		resetTokenRate(1_000);
 		sampleTokenDelta("a".repeat(400), 2_000); // 100 est tokens

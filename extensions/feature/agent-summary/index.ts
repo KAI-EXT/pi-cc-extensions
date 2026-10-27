@@ -10,7 +10,7 @@
  * 引用块文字色取主题 mdQuote（cc 主题下为 muted 灰）。
  */
 
-	import { Markdown } from "@earendil-works/pi-tui";
+import { Markdown } from "@earendil-works/pi-tui";
 import { getMarkdownTheme } from "@earendil-works/pi-coding-agent";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { config, getAgentSummaryConfig } from "../../config/config.ts";
@@ -30,7 +30,15 @@ export default function (pi: ExtensionAPI): void {
 				success: theme.getFgAnsi("success"),
 				failed: theme.getFgAnsi("error"),
 			},
-			{ keys, sep, icons, doneDate, italic, cacheIcon: footerGlyphs(config.footerNerdIcons).cache },
+			{
+				keys,
+				sep,
+				icons,
+				doneDate,
+				italic,
+				cacheIcon: footerGlyphs(config.footerNerdIcons).cache,
+				tokenSpeed: config.tokenSpeed,
+			},
 		);
 		if (!line) return undefined;
 		return new Markdown(line, 1, 0, getMarkdownTheme());

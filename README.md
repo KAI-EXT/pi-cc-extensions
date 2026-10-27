@@ -33,7 +33,7 @@ pi install git:github.com/minuque/pi-cc-extensions
 | 配置面板              | `Style / Features / UI / Diff / Thinking / Footer` 六页签                       | `/ccstyle`                                      |
 | 上下文检查            | 查看上下文占用，并预览 System prompt、Memory、Skills、Tools definition 和消息内容 | `/context`                                      |
 | Session/Subagent 引用 | 搜索并注入历史 Session 或现有 SubAgent 的有效上下文                             | `@`                                             |
-| 状态栏                | 显示：模型、上下文、缓存、费用、git并适配 @narumitw/pi-usage 实时显示额度；git/缓存图标可关 Nerd Font | `/ccstyle`                              |
+| 状态栏                | 显示：模型、上下文、缓存、费用、git并适配 @narumitw/pi-usage 实时显示额度；输出速率按速分档着色（tokenSpeed）；git/缓存图标可关 Nerd Font | `/ccstyle`                              |
 | 主题                  | 随包提供内置 CC Dark、CC Light 主题                                             | `/settings` → Theme                             |
 
 `on` / `compact` 两种模式的渲染样例：[默认模式](./docs/tool-render-examples-default.md) · [紧凑模式](./docs/tool-render-examples-compact.md)
@@ -94,7 +94,7 @@ pi install git:github.com/minuque/pi-cc-extensions
   "footerLine2Keys": [],                   // cwd：目录和会话名；git：分支和改动。可换到任意行
   "footerLine3Keys": [],                   // 有可见芯片才占行
 
-  // tokenSpeed（输出速率分级，源自 pi-token-speed；P1 仅配置层，尚未接入芯片行为）
+  // tokenSpeed（输出速率分级，源自 pi-token-speed）：footer 速率芯片与摘要行 rate 段按四档色着色
   "tokenSpeed": {
     "thresholds": { "slow": 0, "medium": 15, "fast": 30, "blazing": 45 }, // 四档阈值（tok/s），须非负整数且严格升序；非法整块回落默认
     "colors": {
@@ -103,11 +103,11 @@ pi install git:github.com/minuque/pi-cc-extensions
       "fast": "#00ff88",
       "blazing": "#44ddff"
     },
-    "icon": "",                              // 空 = 跟随 footerNerdIcons 默认图标；可设 ⚡/🔥/🚀 等
+    "icon": "",                              // 空 = 无图标（同既往）；非空作速率芯片前缀，可设 ⚡/🔥/🚀 等
     "countStrategy": "estimate",             // estimate（chars/4 估算，CJK 按 1 字 1 token）/ direct（1 delta=1 token，CJK 失真自担）
     "endTpsBehavior": "average",             // average：流结束定格整段平均 / last：定格最后窗口值
     "slidingWindow": 1000,                   // live 瞬时窗口毫秒，范围 100..30000（30s 硬顶）
-    "updateInterval": 0,                     // 渲染节流毫秒，范围 0..1000；0 = 每次增量都刷新
+    "updateInterval": 0,                     // 保留键不再生效：pi TUI 渲染管线已合帧（去重 + 16ms 帧节流），节流不再需要
     "formatDuration": false                  // 耗时格式化：92.3s → 1m 32.3s
   }
 
@@ -134,7 +134,7 @@ pi install git:github.com/minuque/pi-cc-extensions
 | `reasoning` | `🧠 1.8k` | 思考 token（`output` 的子集） | provider 未上报 |
 | `turns` | `󰑓 4` | 模型请求轮数 | 0 轮 |
 | `model` | `🤖 glm-5.3-flash` | 最后一轮使用的模型 | — |
-| `rate` | `avg 42 tok/s` | 整段平均输出速率，与 footer 速率芯片同源；`agent_end` 时定格，会话重放不漂移 | 无速率数据 |
+| `rate` | `avg 42 tok/s` | 整段平均输出速率，与 footer 速率芯片同源，数字按 tokenSpeed 四档着色；`agent_end` 时定格，会话重放不漂移 | 无速率数据 |
 | `tools` | `⛏ bash×19 edit×6 read×4` | bash 按调用计，read/edit/write 按文件去重，其余归 `other×N` | 无工具调用 |
 | `cost` | `💰 $0.05` | 本回合累计成本 | 模型未配置单价 |
 | `failed` | `✗1` | 失败的工具调用数 | 0 次失败 |

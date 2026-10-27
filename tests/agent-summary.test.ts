@@ -13,6 +13,7 @@ import {
 	summaryMarkdown,
 	type AgentSummaryData,
 } from "../extensions/feature/agent-summary/core.ts";
+import { DEFAULT_TOKEN_SPEED } from "../extensions/feature/shell/token-speed-config.ts";
 
 function stripAnsi(text: string): string {
 	return text.replace(/\x1b\[[0-?]*[ -/]*[@-~]/g, "");
@@ -132,7 +133,10 @@ test("summaryMarkdown：emoji 分段风（默认段序）", () => {
 		summaryMarkdown(
 			{ ...data, reasoning: 1800, model: "glm-5.3-flash" },
 			{ success: "", failed: "" },
-			{ keys: ["model", "rate", "tokens", "reasoning", "turns", "cache-hit", "duration"], cacheIcon: "󰆼" },
+			{
+				keys: ["model", "rate", "tokens", "reasoning", "turns", "cache-hit", "duration"],
+				cacheIcon: "󰆼",
+			},
 		),
 		"> 🤖 glm-5.3-flash · avg 42 tok/s · ↑12.4k ↓3.1k tok · 🧠 1.8k · 󰑓 4 · 󰆼 78% · ⚡ 42s",
 	);
@@ -152,7 +156,11 @@ test("summaryMarkdown：emoji 分段风（默认段序）", () => {
 	);
 	// italic: true → 恢复整行斜体
 	assert.equal(
-		summaryMarkdown(data, { success: "", failed: "" }, { keys: ["duration", "cost"], italic: true }),
+		summaryMarkdown(
+			data,
+			{ success: "", failed: "" },
+			{ keys: ["duration", "cost"], italic: true },
+		),
 		"> *⚡ 42s · 💰 $0.05*",
 	);
 	// 自定义分隔符
@@ -162,7 +170,11 @@ test("summaryMarkdown：emoji 分段风（默认段序）", () => {
 	);
 	// 有失败：追加 ✗N
 	assert.match(
-		summaryMarkdown({ ...data, failed: 2 }, { success: "", failed: "" }, { keys: ["failed", "done"] }),
+		summaryMarkdown(
+			{ ...data, failed: 2 },
+			{ success: "", failed: "" },
+			{ keys: ["failed", "done"] },
+		),
 		/✗2 · done \d{2}:\d{2}$/,
 	);
 	// 全空：不渲染
@@ -188,6 +200,54 @@ test("summaryMarkdown：emoji 分段风（默认段序）", () => {
 		}),
 		"",
 	);
+});
+
+test("summaryMarkdown：rate 段按 tokenSpeed 四档真彩着色，且不再整段补色", () => {
+	const data: AgentSummaryData = {
+		commands: 0,
+		reads: 0,
+		edits: 0,
+		writes: 0,
+		others: 0,
+		failed: 0,
+		durationMs: 1_000,
+		inputTokens: 0,
+		outputTokens: 100,
+		cacheRead: 0,
+		cacheWrite: 0,
+		reasoning: 0,
+		cost: 0,
+		turns: 1,
+		model: "",
+		tokensPerSec: 42,
+		endedAt: 1_000,
+	};
+	// 42 tok/s → fast 档 #00ff88 → truecolor 0;255;136；收尾 \x1b[0m 与摘要行其它数字同一口径
+	assert.equal(
+		summaryMarkdown(
+			data,
+			{ success: "", failed: "" },
+			{ keys: ["rate"], tokenSpeed: DEFAULT_TOKEN_SPEED },
+		),
+		"> avg \x1b[38;2;0;255;136m42\x1b[0m tok/s",
+	);
+	// 16 tok/s → medium 档 #ffaa00
+	assert.match(
+		summaryMarkdown(
+			{ ...data, tokensPerSec: 16 },
+			{ success: "", failed: "" },
+			{ keys: ["rate"], tokenSpeed: DEFAULT_TOKEN_SPEED },
+		),
+		/\x1b\[38;2;255;170;0m16\x1b\[0m tok\/s/,
+	);
+	// success 色存在时已带档色的 rate 段不被二次补色，后续段照常补色
+	const mixed = summaryMarkdown(
+		data,
+		{ success: "\x1b[32m", failed: "" },
+		{ keys: ["rate", "done"], tokenSpeed: DEFAULT_TOKEN_SPEED },
+	);
+	assert.match(mixed, /avg \x1b\[38;2;0;255;136m42\x1b\[0m tok\/s · done/);
+	assert.doesNotMatch(mixed, /\x1b\[32m\x1b\[38;2/);
 });
 
 test("bindAgentSummary：agent_start 重置、turn_end 累计 usage、minTools 阈值", async () => {

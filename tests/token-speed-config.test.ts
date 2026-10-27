@@ -8,7 +8,10 @@ import {
 import {
 	DEFAULT_TOKEN_SPEED,
 	formatTokenSpeedSummary,
+	hexToTruecolor,
 	normalizeTokenSpeed,
+	tokenSpeedRateAnsi,
+	tokenSpeedTier,
 } from "../extensions/feature/shell/token-speed-config.ts";
 
 test("tokenSpeed falls back to the default block when missing or not an object", () => {
@@ -75,7 +78,7 @@ test("enum fields fall back when invalid", () => {
 	assert.equal(normalizeTokenSpeed({ endTpsBehavior: 7 }).endTpsBehavior, "average");
 });
 
-test("sliding window and update interval clamp into range, junk falls back", () => {
+test("sliding window clamps into range, junk falls back; updateInterval keeps the key but is ignored", () => {
 	assert.equal(normalizeTokenSpeed({ slidingWindow: 50 }).slidingWindow, 100);
 	assert.equal(normalizeTokenSpeed({ slidingWindow: 60_000 }).slidingWindow, 30_000);
 	assert.equal(normalizeTokenSpeed({ slidingWindow: 15_000 }).slidingWindow, 15_000);
@@ -83,13 +86,36 @@ test("sliding window and update interval clamp into range, junk falls back", () 
 		normalizeTokenSpeed({ slidingWindow: "abc" }).slidingWindow,
 		DEFAULT_TOKEN_SPEED.slidingWindow,
 	);
-	assert.equal(normalizeTokenSpeed({ updateInterval: 2_000 }).updateInterval, 1000);
-	assert.equal(normalizeTokenSpeed({ updateInterval: 120 }).updateInterval, 120);
+	// 已验证 pi TUI 渲染管线合帧（requestRender 去重 + 16ms 帧节流），节流不再需要：键位保留、取值恒 0。
+	assert.equal(normalizeTokenSpeed({}).updateInterval, 0);
+	assert.equal(normalizeTokenSpeed({ updateInterval: 2_000 }).updateInterval, 0);
+	assert.equal(normalizeTokenSpeed({ updateInterval: 120 }).updateInterval, 0);
 	assert.equal(normalizeTokenSpeed({ updateInterval: -5 }).updateInterval, 0);
 	assert.equal(normalizeTokenSpeed({ formatDuration: true }).formatDuration, true);
 	assert.equal(normalizeTokenSpeed({ formatDuration: "yes" }).formatDuration, false);
 	assert.equal(normalizeTokenSpeed({ icon: "⚡" }).icon, "⚡");
 	assert.equal(normalizeTokenSpeed({ icon: 3 }).icon, "");
+});
+
+test("tokenSpeedTier maps rates onto four tiers and tokenSpeedRateAnsi emits truecolor codes", () => {
+	const t = DEFAULT_TOKEN_SPEED.thresholds;
+	assert.equal(tokenSpeedTier(0, t), "slow");
+	assert.equal(tokenSpeedTier(14.9, t), "slow");
+	assert.equal(tokenSpeedTier(15, t), "medium");
+	assert.equal(tokenSpeedTier(29, t), "medium");
+	assert.equal(tokenSpeedTier(30, t), "fast");
+	assert.equal(tokenSpeedTier(44.9, t), "fast");
+	assert.equal(tokenSpeedTier(45, t), "blazing");
+	assert.equal(tokenSpeedTier(999, t), "blazing");
+	// 自定义阈值按序取档
+	assert.equal(tokenSpeedTier(24, { slow: 0, medium: 10, fast: 20, blazing: 80 }), "fast");
+	assert.equal(tokenSpeedTier(5, { slow: 0, medium: 10, fast: 20, blazing: 80 }), "slow");
+	// 档位 → ANSI truecolor 开码
+	assert.equal(hexToTruecolor("#00ff88"), "\x1b[38;2;0;255;136m");
+	assert.equal(tokenSpeedRateAnsi(5, DEFAULT_TOKEN_SPEED), "\x1b[38;2;255;68;68m");
+	assert.equal(tokenSpeedRateAnsi(16, DEFAULT_TOKEN_SPEED), "\x1b[38;2;255;170;0m");
+	assert.equal(tokenSpeedRateAnsi(42, DEFAULT_TOKEN_SPEED), "\x1b[38;2;0;255;136m");
+	assert.equal(tokenSpeedRateAnsi(60, DEFAULT_TOKEN_SPEED), "\x1b[38;2;68;221;255m");
 });
 
 test("tokenSpeed normalization keeps other config keys untouched", () => {

@@ -42,6 +42,7 @@ import { createGitStatsRefresher, readGitStats, type GitStats } from "./git-stat
 import { MCP_STATUS_KEY, buildMcpChip } from "./mcp-chip.ts";
 import { inputTextIndent } from "./prompt-editor.ts";
 import { currentTtftMs, displayTokenRate, formatTokenRate } from "./token-rate.ts";
+import { tokenSpeedRateAnsi } from "./token-speed-config.ts";
 
 export { parseGitStats } from "./git-stats.ts";
 
@@ -456,14 +457,21 @@ const createCustomFooterFactory =
 			const glyphs = footerGlyphs(config.footerNerdIcons);
 			const cacheLabel =
 				cachePct > 0 ? `${glyphs.cache ? `${glyphs.cache} ` : ""}${Math.floor(cachePct)}%` : "";
+			// 速率数字按 tokenSpeed 四档着色：先关 dim（\x1b[22;39m，同 theme.fg("dim") 收尾码）让档色全亮，
+			// 数字后用 theme.getFgAnsi("dim") 重开 dim，尾部 tok/s/TTFT 继续主题暗色。
+			const rateValue = config.footerTokenRate ? displayTokenRate(config.footerTokenRateMode) : 0;
 			const rateLabel = config.footerTokenRate
 				? formatTokenRate(
-						displayTokenRate(config.footerTokenRateMode),
+						rateValue,
 						currentTtftMs(),
 						config.footerTokenRateMode,
 						config.footerTokenRateTtft,
+						(value) =>
+							`\x1b[22;39m${tokenSpeedRateAnsi(rateValue, config.tokenSpeed)}${value}${theme.getFgAnsi?.("dim") ?? ""}`,
 					)
 				: "";
+			// tokenSpeed.icon 非空时作芯片前缀；空串保持无图标现状。
+			const rateIcon = config.tokenSpeed.icon ? `${config.tokenSpeed.icon} ` : "";
 			const costLabel =
 				cost || usingSubscription
 					? formatFooterCost(cost, config.footerCurrency, config.footerCurrencyRate)
@@ -506,7 +514,7 @@ const createCustomFooterFactory =
 					barGauge(percent ?? 0) + theme.fg("dim", ` ${pctLabel}/${fmt(contextWindow)}`),
 				],
 				[FOOTER_CACHE_KEY, cacheLabel ? theme.fg("dim", cacheLabel) : ""],
-				[FOOTER_RATE_KEY, rateLabel ? theme.fg("dim", rateLabel) : ""],
+				[FOOTER_RATE_KEY, rateLabel ? theme.fg("dim", `${rateIcon}${rateLabel}`) : ""],
 				[FOOTER_COST_KEY, costChip],
 				[FOOTER_CWD_KEY, place],
 				[FOOTER_GIT_KEY, gitChip],

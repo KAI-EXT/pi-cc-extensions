@@ -337,7 +337,9 @@ test("git can move to line1 and hide without leaving a fixed second-line slot", 
 	// 从 line2 移入 line1 时追加到末尾
 	const fromLine2 = {
 		...DEFAULT_FOOTER_CHIP_LAYOUT,
-		footerLine1Keys: DEFAULT_FOOTER_CHIP_LAYOUT.footerLine1Keys.filter((key) => key !== FOOTER_GIT_KEY),
+		footerLine1Keys: DEFAULT_FOOTER_CHIP_LAYOUT.footerLine1Keys.filter(
+			(key) => key !== FOOTER_GIT_KEY,
+		),
 		footerLine2Keys: [FOOTER_GIT_KEY],
 	};
 	layout = moveFooterKeyToLine(fromLine2, FOOTER_GIT_KEY, 1);

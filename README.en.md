@@ -33,7 +33,7 @@ Run `/reload` after installation.
 | Settings panel              | `Style / Features / UI / Diff / Thinking / Footer` tabs                                                                                      | `/ccstyle`                                      |
 | Context inspection          | Usage breakdown and previews for the system prompt, memory, skills, tools definition, and messages                                           | `/context`                                      |
 | Session/Subagent references | Search and inject effective context from previous Sessions or existing SubAgents                                                             | `@`                                             |
-| Status bar                  | Shows model, context, cache, cost, and git; also works with `@narumitw/pi-usage` for live quota. Git/cache Nerd Font icons can be turned off | `/ccstyle`                                      |
+| Status bar                  | Shows model, context, cache, cost, and git; also works with `@narumitw/pi-usage` for live quota. Output rate is tier-colored via `tokenSpeed`. Git/cache Nerd Font icons can be turned off | `/ccstyle`                                      |
 | Theme                       | Bundled CC Dark and CC Light themes                                                                                                          | `/settings` → Theme                             |
 
 Renderer snapshots for `on` / `compact` modes: [default](./docs/tool-render-examples-default.md) · [compact](./docs/tool-render-examples-compact.md)
@@ -94,7 +94,7 @@ Renderer snapshots for `on` / `compact` modes: [default](./docs/tool-render-exam
   "footerLine2Keys": [],       // cwd: directory and session; git: branch and changes. Either can move to any line
   "footerLine3Keys": [],                   // painted only when a chip is visible
 
-  // tokenSpeed (output rate tiers, from pi-token-speed; P1 config only, not wired into the chip yet)
+  // tokenSpeed (output rate tiers, from pi-token-speed): the footer rate chip and the summary line's rate segment are tier-colored
   "tokenSpeed": {
     "thresholds": { "slow": 0, "medium": 15, "fast": 30, "blazing": 45 }, // four tiers (tok/s), non-negative strictly ascending integers; invalid block falls back to defaults
     "colors": {
@@ -103,11 +103,11 @@ Renderer snapshots for `on` / `compact` modes: [default](./docs/tool-render-exam
       "fast": "#00ff88",
       "blazing": "#44ddff"
     },
-    "icon": "",                              // empty = follow footerNerdIcons default; can be ⚡/🔥/🚀 etc.
+    "icon": "",                              // empty = no icon (as before); non-empty prefixes the rate chip, e.g. ⚡/🔥/🚀
     "countStrategy": "estimate",             // estimate (chars/4, CJK counts 1 per char) / direct (1 delta=1 token, CJK distortion is on you)
     "endTpsBehavior": "average",             // average: freeze to the whole-run average / last: freeze to the last window value
     "slidingWindow": 1000,                   // live sliding window in ms, range 100..30000 (30s hard cap)
-    "updateInterval": 0,                     // render throttle in ms, range 0..1000; 0 = refresh on every delta
+    "updateInterval": 0,                     // kept but inert: the pi TUI render pipeline already coalesces frames (dedup + 16ms frame throttle)
     "formatDuration": false                  // duration formatting: 92.3s → 1m 32.3s
   }
 
@@ -134,7 +134,7 @@ The turn summary line renders segments in `agentSummaryKeys` order; segments wit
 | `reasoning` | `🧠 1.8k` | Reasoning tokens (subset of `output`) | provider reports none |
 | `turns` | `󰑓 4` | Model request count | 0 turns |
 | `model` | `🤖 glm-5.3-flash` | Model of the last turn | — |
-| `rate` | `avg 42 tok/s` | Average output rate, same source as the footer rate chip; frozen at `agent_end` so replays stay stable | no rate data |
+| `rate` | `avg 42 tok/s` | Average output rate, same source as the footer rate chip, tier-colored via `tokenSpeed`; frozen at `agent_end` so replays stay stable | no rate data |
 | `tools` | `⛏ bash×19 edit×6 read×4` | bash counts calls; read/edit/write dedupe by file; rest are `other×N` | no tool calls |
 | `cost` | `💰 $0.05` | Accumulated turn cost | model has no pricing |
 | `failed` | `✗1` | Failed tool calls | 0 failures |

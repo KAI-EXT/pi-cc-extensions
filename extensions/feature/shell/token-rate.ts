@@ -271,15 +271,18 @@ export function formatTtft(ttftMs: number): string {
 	return `${(ttftMs / 1000).toFixed(1)}s`;
 }
 
-/** `avg 1.2k tok/s (TTFT: 812ms)`；无数据显示空串，未出首 token 或 showTtft 为 false 时无括号段。 */
+/** `avg 1.2k tok/s (TTFT: 812ms)`；无数据显示空串，未出首 token 或 showTtft 为 false 时无括号段。
+ *  paintValue 可选传入取色函数（P3 footer/摘要行共用 tokenSpeedRateAnsi），只包住速率数字。 */
 export function formatTokenRate(
 	rate: number,
 	ttftMs = 0,
 	mode: TokenRateMode = "average",
 	showTtft = true,
+	paintValue?: (value: string) => string,
 ): string {
 	if (!Number.isFinite(rate) || rate <= 0) return "";
-	const value = rate >= 1000 ? `${(rate / 1000).toFixed(1)}k` : `${Math.round(rate)}`;
+	const plain = rate >= 1000 ? `${(rate / 1000).toFixed(1)}k` : `${Math.round(rate)}`;
+	const value = paintValue ? paintValue(plain) : plain;
 	const ttft =
 		showTtft && Number.isFinite(ttftMs) && ttftMs > 0 ? ` (TTFT: ${formatTtft(ttftMs)})` : "";
 	const label = mode === "live" ? "live" : "avg";

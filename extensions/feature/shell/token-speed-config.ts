@@ -1,6 +1,7 @@
 /**
- * tokenSpeed 配置段（源自 pi-token-speed，MIT）。P1 仅配置层：类型 + 默认值 + 校验；
- * 渲染与引擎行为在 P2/P3 接入，本模块不碰 footer 现状。
+ * tokenSpeed 配置段（源自 pi-token-speed，MIT）。
+ * P1 配置层：类型 + 默认值 + 校验；P3 起提供渲染侧取档/取色函数（tokenSpeedTier /
+ * tokenSpeedRateAnsi），footer 速率芯片与摘要行 rate 段共用。
  */
 
 export type TokenSpeedCountStrategy = "estimate" | "direct";
@@ -29,7 +30,7 @@ export interface TokenSpeedConfig {
 	endTpsBehavior: TokenSpeedEndTpsBehavior;
 	/** live 滑动窗口毫秒，范围 100..30000（30s 硬顶）。 */
 	slidingWindow: number;
-	/** 渲染节流毫秒，范围 0..1000；0 = 每次增量都刷新。 */
+	/** 保留键不再生效：已验证 pi TUI 渲染管线合帧（requestRender 去重 + 16ms 帧节流），恒为 0。 */
 	updateInterval: number;
 	formatDuration: boolean;
 }
@@ -57,7 +58,6 @@ const TOKEN_SPEED_COUNT_STRATEGIES: TokenSpeedCountStrategy[] = ["estimate", "di
 const TOKEN_SPEED_END_TPS_BEHAVIORS: TokenSpeedEndTpsBehavior[] = ["average", "last"];
 const SLIDING_WINDOW_MIN = 100;
 const SLIDING_WINDOW_MAX = 30_000;
-const UPDATE_INTERVAL_MAX = 1000;
 const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
 
 function pickEnumValue<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
@@ -133,12 +133,9 @@ export function normalizeTokenSpeed(input: unknown): TokenSpeedConfig {
 			SLIDING_WINDOW_MIN,
 			SLIDING_WINDOW_MAX,
 		),
-		updateInterval: pickIntInRange(
-			source.updateInterval,
-			DEFAULT_TOKEN_SPEED.updateInterval,
-			0,
-			UPDATE_INTERVAL_MAX,
-		),
+		// updateInterval 保留键位但忽略取值：已验证 pi TUI requestRender 自带合帧
+		//（renderRequested 去重 + MIN_RENDER_INTERVAL_MS=16ms 节流），渲染节流不再需要。
+		updateInterval: DEFAULT_TOKEN_SPEED.updateInterval,
 		formatDuration: source.formatDuration === true,
 	};
 }
@@ -147,4 +144,29 @@ export function normalizeTokenSpeed(input: unknown): TokenSpeedConfig {
 export function formatTokenSpeedSummary(config: TokenSpeedConfig): string {
 	const { thresholds, countStrategy, endTpsBehavior, slidingWindow } = config;
 	return `tokenSpeed=[${thresholds.slow}/${thresholds.medium}/${thresholds.fast}/${thresholds.blazing}] ${countStrategy} ${endTpsBehavior === "last" ? "last" : "avg"} w${slidingWindow}`;
+}
+
+/** 四档档位。 */
+export type TokenSpeedTier = keyof TokenSpeedThresholds;
+
+/** 速率定档：低于 medium 阈值 slow，低于 fast 为 medium，低于 blazing 为 fast，其余 blazing。 */
+export function tokenSpeedTier(rate: number, thresholds: TokenSpeedThresholds): TokenSpeedTier {
+	if (rate < thresholds.medium) return "slow";
+	if (rate < thresholds.fast) return "medium";
+	if (rate < thresholds.blazing) return "fast";
+	return "blazing";
+}
+
+/** #rrggbb → ANSI truecolor 前景开码；合法性由 normalizeTokenSpeed 保证。 */
+export function hexToTruecolor(hex: string): string {
+	const n = Number.parseInt(hex.slice(1), 16);
+	return `\x1b[38;2;${(n >> 16) & 0xff};${(n >> 8) & 0xff};${n & 0xff}m`;
+}
+
+/**
+ * 速率数值的 ANSI truecolor 开码：footer 速率芯片与摘要行 rate 段共用的取色函数。
+ * 只返回开码，收尾序列由调用方按上下文选择（footer 恢复主题 dim，摘要行 \x1b[0m）。
+ */
+export function tokenSpeedRateAnsi(rate: number, speed: TokenSpeedConfig): string {
+	return hexToTruecolor(speed.colors[tokenSpeedTier(rate, speed.thresholds)]);
 }

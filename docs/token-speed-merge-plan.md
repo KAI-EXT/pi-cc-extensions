@@ -157,12 +157,23 @@ commands//tps               ──►   后置（同上）
       agent-summary `rate` 段、working-message 采集不受影响
 - 验收：现有 token-rate 相关测试全绿 + 新增滑动窗口单测（含 stall 场景）
 
-### P3 渲染增强
-- [ ] footer rate 芯片：按 `tokenSpeed.colors` 分级着色（阈值 → 颜色）
-- [ ] `icon` 支持；`updateInterval` 节流渲染（前置任务：验证 pi 渲染管线已合帧则砍）
-- [ ] agentSummary `rate` 段：可选沿用同一分级着色（复用同一取色函数）
-- [ ] `formatDuration` 接入耗时显示（若开放 stats 模式）
-- 验收：`tokenSpeed` 缺省时芯片外观与现在一致
+### P3 渲染增强（2026-10-27 实施）
+- [x] footer rate 芯片：按 `tokenSpeed.colors` 分级着色。复用 `token-speed-config.ts` 的
+      `tokenSpeedTier` / `tokenSpeedRateAnsi`（hex → ANSI truecolor）；数字段先关 dim
+      （`\x1b[22;39m`，同 theme.fg("dim") 收尾码）让档色全亮，数字后用 `theme.getFgAnsi("dim")`
+      重开 dim，尾部 tok/s/TTFT 继续主题暗色。
+- [x] `icon` 支持：`tokenSpeed.icon` 非空时作芯片前缀；空串保持无图标现状（不随 footerNerdIcons）。
+- [x] `updateInterval` 节流 —— **前置验证结论：pi TUI 渲染管线已合帧，节流不实现**。
+      `@earendil-works/pi-tui` 的 `requestRender()` 用 `renderRequested` 去重（已请求未渲染时直接
+      返回），`scheduleRender()` 按 `MIN_RENDER_INTERVAL_MS = 16ms`（≈60fps）节流，流式 delta 的
+      多次请求自然合并为一帧。因此 `normalizeTokenSpeed` 保留键位但忽略取值（恒 0），旧配置
+      写了该键也被接受、不生效。
+- [x] agentSummary `rate` 段：`summaryMarkdown` options 新增 `tokenSpeed` 注入，复用同一
+      `tokenSpeedRateAnsi` 给数字着色（收尾 `\x1b[0m`，与摘要行其它数字段同一口径）；
+      已带 ANSI 的段跳过整行 success 补色，不二次包裹。
+- [ ] `formatDuration` 接入耗时显示（后置：stats 显示模式未开放，随 P4 display 模式族一起）。
+- 验收修订：默认四档色已拍板生效，`tokenSpeed` 缺省时芯片即带色——这是预期，不是回归；
+  想回纯主题色待 P4 的 `colors: null` 开关。
 
 ### P4 后置（本次不做）
 - [ ] `display` / `displayColors` 模式族

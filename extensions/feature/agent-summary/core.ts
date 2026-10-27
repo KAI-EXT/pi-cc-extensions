@@ -10,6 +10,7 @@
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { formatTokenRate } from "../shell/token-rate.ts";
+import { tokenSpeedRateAnsi, type TokenSpeedConfig } from "../shell/token-speed-config.ts";
 import { formatDuration } from "../../utils/format.ts";
 
 /** 工具分类。 */
@@ -38,7 +39,7 @@ export type AgentSummaryData = {
 	turns: number;
 	/** 最后一轮使用的模型 id。 */
 	model: string;
-		/** 整段指令平均输出速率（tok/s，与 footer 同源），agent_end 时定格。 */
+	/** 整段指令平均输出速率（tok/s，与 footer 同源），agent_end 时定格。 */
 	tokensPerSec: number;
 	/** 回合结束时刻（毫秒时间戳）。 */
 	endedAt: number;
@@ -84,6 +85,8 @@ export interface AgentSummaryViewConfig {
 	doneDate?: boolean;
 	/** 整行斜体（markdown *…*）；false 直体。 */
 	italic?: boolean;
+	/** 传入时 rate 段数字按 tokenSpeed 四档真彩着色（与 footer 芯片共用取档函数）；缺省不着色。 */
+	tokenSpeed?: TokenSpeedConfig;
 }
 
 /** 从全局 config 取出的完整摘要配置（含显示阈值）。 */
@@ -265,9 +268,13 @@ function summaryParts(data: AgentSummaryData, options: AgentSummaryViewConfig): 
 				break;
 			}
 			case "rate": {
-				// 与 footer 同源的整段平均输出速率（agent_end 时定格）。
+				// 与 footer 同源的整段平均输出速率（agent_end 时定格）；tokenSpeed 存在时数字按四档色。
 				if (data.tokensPerSec > 0) {
-					parts.push(formatTokenRate(data.tokensPerSec, 0, "average", false));
+					const speed = options.tokenSpeed;
+					const paint = speed
+						? (value: string) => `${tokenSpeedRateAnsi(data.tokensPerSec, speed)}${value}\x1b[0m`
+						: undefined;
+					parts.push(formatTokenRate(data.tokensPerSec, 0, "average", false, paint));
 				}
 				break;
 			}
@@ -279,15 +286,7 @@ function summaryParts(data: AgentSummaryData, options: AgentSummaryViewConfig): 
 	return parts;
 }
 
-const DEFAULT_SUMMARY_KEYS = [
-	"duration",
-	"tokens",
-	"rate",
-	"cache-hit",
-	"turns",
-	"tools",
-	"done",
-];
+const DEFAULT_SUMMARY_KEYS = ["duration", "tokens", "rate", "cache-hit", "turns", "tools", "done"];
 
 export function summaryMarkdown(
 	data: AgentSummaryData,
@@ -296,8 +295,9 @@ export function summaryMarkdown(
 ): string {
 	const parts = summaryParts(data, options);
 	if (parts.length === 0) return "";
-	// 数字/计数用 success 色，失败段用 failed 色。
+	// 数字/计数用 success 色，失败段用 failed 色；已自带档色的段（rate）不再二次补色。
 	const paintPart = (part: string) => {
+		if (part.includes("\x1b[")) return part;
 		const code = part.startsWith("✗") ? colors.failed : colors.success;
 		if (!code) return part;
 		return part.replace(/(\d+(?:\.\d+)?k?)/, `${code}$1\x1b[0m`);
