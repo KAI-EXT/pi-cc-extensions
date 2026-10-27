@@ -22,7 +22,13 @@ import {
 	DEFAULT_FOOTER_CHIP_LAYOUT,
 	DEFAULT_FOOTER_LINE1_KEYS,
 	DEFAULT_FOOTER_LINE2_KEYS,
+	FOOTER_CACHE_KEY,
+	FOOTER_CONTEXT_KEY,
+	FOOTER_COST_KEY,
+	FOOTER_CWD_KEY,
 	FOOTER_GIT_KEY,
+	FOOTER_MODEL_KEY,
+	FOOTER_RATE_KEY,
 	isBuiltinFooterKey,
 	PI_USAGE_KEY,
 	PI_USAGE_SOURCE,
@@ -127,8 +133,15 @@ test("normalizeConfig keeps explicit empty hiddenKeys and inserts builtins aroun
 		footerLine1Keys: [PI_USAGE_KEY],
 	});
 	assert.deepEqual(next.footerHiddenKeys, []);
-	assert.deepEqual(next.footerLine1Keys, [...DEFAULT_FOOTER_LINE1_KEYS]);
-	assert.deepEqual(next.footerLine2Keys, [...DEFAULT_FOOTER_LINE2_KEYS]);
+	assert.deepEqual(next.footerLine1Keys, [
+		FOOTER_CWD_KEY,
+		FOOTER_GIT_KEY,
+		FOOTER_MODEL_KEY,
+		FOOTER_CONTEXT_KEY,
+		FOOTER_CACHE_KEY,
+		PI_USAGE_KEY,
+	]);
+	assert.deepEqual(next.footerLine2Keys, []);
 });
 
 test("normalizeFooterChipLayout migrates old plugin-only lines and keeps an explicit model slot", () => {
@@ -138,15 +151,15 @@ test("normalizeFooterChipLayout migrates old plugin-only lines and keeps an expl
 		footerLine2Keys: ["ponytail", "lsp"],
 	});
 	assert.deepEqual(migrated.footerLine1Keys, [
-		"model",
-		"context",
-		"cache",
-		"rate",
-		"cost",
+		FOOTER_CWD_KEY,
+		FOOTER_GIT_KEY,
+		FOOTER_MODEL_KEY,
+		FOOTER_CONTEXT_KEY,
+		FOOTER_CACHE_KEY,
 		"usage",
 		"ponytail",
 	]);
-	assert.deepEqual(migrated.footerLine2Keys, ["cwd", "git", "lsp"]);
+	assert.deepEqual(migrated.footerLine2Keys, ["lsp"]);
 	assert.deepEqual(migrated.footerHiddenKeys, ["ponytail"]);
 
 	const explicit = normalizeFooterChipLayout({
@@ -165,21 +178,28 @@ test("normalizeFooterChipLayout rewrites legacy localUsage and piUsage keys to p
 		footerLine2Keys: ["localUsage"],
 	});
 	assert.deepEqual(fromLocal.footerLine1Keys, [
-		"model",
-		"context",
-		"cache",
-		"rate",
-		"cost",
+		FOOTER_CWD_KEY,
+		FOOTER_GIT_KEY,
+		FOOTER_MODEL_KEY,
+		FOOTER_CONTEXT_KEY,
+		FOOTER_CACHE_KEY,
 		PI_USAGE_KEY,
 		"usage",
 	]);
-	assert.deepEqual(fromLocal.footerLine2Keys, [...DEFAULT_FOOTER_LINE2_KEYS]);
+	assert.deepEqual(fromLocal.footerLine2Keys, []);
 	assert.deepEqual(fromLocal.footerHiddenKeys, [PI_USAGE_KEY]);
 	const fromCamel = normalizeFooterChipLayout({
 		footerLine1Keys: ["piUsage"],
 	});
-	assert.deepEqual(fromCamel.footerLine1Keys, [...DEFAULT_FOOTER_LINE1_KEYS]);
-	assert.deepEqual(fromCamel.footerLine2Keys, [...DEFAULT_FOOTER_LINE2_KEYS]);
+	assert.deepEqual(fromCamel.footerLine1Keys, [
+		FOOTER_CWD_KEY,
+		FOOTER_GIT_KEY,
+		FOOTER_MODEL_KEY,
+		FOOTER_CONTEXT_KEY,
+		FOOTER_CACHE_KEY,
+		PI_USAGE_KEY,
+	]);
+	assert.deepEqual(fromCamel.footerLine2Keys, []);
 });
 
 test("disabled custom footer leaves another extension's footer untouched", () => {
@@ -204,13 +224,13 @@ test("disabled custom footer leaves another extension's footer untouched", () =>
 	}
 });
 
-test("defaultFooterLine sends usage-like keys to line1, git to line2, and skips extension model status", () => {
+test("defaultFooterLine sends usage-like and builtin keys to line1, unknown plugins to line2, and skips extension model status", () => {
 	assert.equal(isSkippedFooterStatusKey("model"), true);
 	assert.equal(defaultFooterLine("usage"), 1);
 	assert.equal(defaultFooterLine("pi-grok-usage"), 1);
 	assert.equal(defaultFooterLine("cloud-quota"), 1);
 	assert.equal(defaultFooterLine(PI_USAGE_KEY), 1);
-	assert.equal(defaultFooterLine(FOOTER_GIT_KEY), 2);
+	assert.equal(defaultFooterLine(FOOTER_GIT_KEY), 1);
 	assert.equal(defaultFooterLine("ponytail"), 2);
 	assert.equal(defaultFooterLine("lsp"), 2);
 });
@@ -250,8 +270,9 @@ test("moveFooterKeyToLine appends to the target line and clamps shift at the end
 	assert.deepEqual(layout.footerLine2Keys, [...DEFAULT_FOOTER_LINE2_KEYS, "lsp"]);
 	layout = shiftFooterKeyLine(layout, "ponytail", 1);
 	assert.deepEqual(layout.footerLine3Keys, ["ponytail"]);
+	// model 已在 line1：shift -1（上一行）被夹住，位置不变
 	layout = shiftFooterKeyLine(layout, "model", -1);
-	assert.equal(layout.footerLine1Keys[0], "model");
+	assert.equal(layout.footerLine1Keys.indexOf(FOOTER_MODEL_KEY), 3);
 });
 
 test("reorderFooterKey swaps within a line only", () => {
@@ -310,9 +331,18 @@ test("pi-usage and plugin usage can both be visible with no fallback judgment", 
 });
 
 test("git can move to line1 and hide without leaving a fixed second-line slot", () => {
+	// git 已在默认 line1：move 到 line1 是 no-op
 	let layout = moveFooterKeyToLine(DEFAULT_FOOTER_CHIP_LAYOUT, FOOTER_GIT_KEY, 1);
+	assert.deepEqual(layout.footerLine2Keys, []);
+	// 从 line2 移入 line1 时追加到末尾
+	const fromLine2 = {
+		...DEFAULT_FOOTER_CHIP_LAYOUT,
+		footerLine1Keys: DEFAULT_FOOTER_CHIP_LAYOUT.footerLine1Keys.filter((key) => key !== FOOTER_GIT_KEY),
+		footerLine2Keys: [FOOTER_GIT_KEY],
+	};
+	layout = moveFooterKeyToLine(fromLine2, FOOTER_GIT_KEY, 1);
 	assert.equal(layout.footerLine1Keys.at(-1), FOOTER_GIT_KEY);
-	assert.deepEqual(layout.footerLine2Keys, ["cwd"]);
+	assert.deepEqual(layout.footerLine2Keys, []);
 	layout = toggleFooterKeyHidden(layout, FOOTER_GIT_KEY);
 	assert.deepEqual(
 		visibleFooterPluginTexts(layout.footerLine1Keys, layout.footerHiddenKeys, new Map()),

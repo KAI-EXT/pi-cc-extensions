@@ -166,7 +166,7 @@ export const AGENT_SUMMARY_KEY_VALUES = [
 ];
 
 export const DEFAULT_CONFIG: Config = {
-	mode: "on",
+	mode: "compact",
 	excludeRenderers: [],
 	diffViewMode: DEFAULT_TOOL_DISPLAY_CONFIG.diffViewMode,
 	diffIndicatorMode: DEFAULT_TOOL_DISPLAY_CONFIG.diffIndicatorMode,
@@ -186,7 +186,7 @@ export const DEFAULT_CONFIG: Config = {
 	scrollButtonMode: "dock",
 	enableSessionReference: true,
 	enableSubagentAutocomplete: true,
-	enableContextCommand: true,
+	enableContextCommand: false,
 	enableAgentSummary: true,
 	enableWorkingMessage: true,
 	enableAliases: true,

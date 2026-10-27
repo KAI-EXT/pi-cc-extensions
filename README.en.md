@@ -45,13 +45,13 @@ Renderer snapshots for `on` / `compact` modes: [default](./docs/tool-render-exam
 ```jsonc
 {
   // style
-  "mode": "on",                            // on / compact / off
+  "mode": "compact",                            // on / compact / off
   "excludeRenderers": [],                  // tools keeping the native renderer, matched case-insensitively; Agent always keeps its dedicated renderer
 
   // features
   "enableSessionReference": true,          // @ session references
   "enableSubagentAutocomplete": true,      // @subagent:[name] completion and delegation hints
-  "enableContextCommand": true,            // /context usage check
+  "enableContextCommand": false,            // /context usage check
   "enableAgentSummary": true,              // per-turn tool summary
   "enableWorkingMessage": true,            // Working... bottom token/elapsed
   "enableAliases": true,                   // /clear, /exit aliases
@@ -90,8 +90,8 @@ Renderer snapshots for `on` / `compact` modes: [default](./docs/tool-render-exam
   "footerNerdIcons": true,                 // Nerd Font glyphs for git/cache; false = plain text
   "footerGitStatsMode": "working",         // working (default): uncommitted; branch: cumulative net changes
   "footerHiddenKeys": [],                  // hidden chip keys
-  "footerLine1Keys": ["model", "context", "cache", "rate", "cost", "pi-usage"], // chip order per line; builtins and plugins share one layout
-  "footerLine2Keys": ["cwd", "git"],       // cwd: directory and session; git: branch and changes. Either can move to any line
+  "footerLine1Keys": ["cwd", "pi-usage", "git", "model", "context", "cache"], // chip order per line; builtins and plugins share one layout
+  "footerLine2Keys": [],       // cwd: directory and session; git: branch and changes. Either can move to any line
   "footerLine3Keys": [],                   // painted only when a chip is visible
 
   // agent-summary (turn summary line)

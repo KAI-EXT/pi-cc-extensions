@@ -16,18 +16,18 @@ export const FOOTER_COST_KEY = "cost";
 export const FOOTER_CWD_KEY = "cwd";
 export const FOOTER_GIT_KEY = "git";
 
-/** 默认第一行，顺序与改成可排布之前的硬编码一致。 */
+/** 默认第一行：cwd/pi-usage/git 在左，model/context/cache 在右。 */
 export const DEFAULT_FOOTER_LINE1_KEYS = [
+	FOOTER_CWD_KEY,
+	PI_USAGE_KEY,
+	FOOTER_GIT_KEY,
 	FOOTER_MODEL_KEY,
 	FOOTER_CONTEXT_KEY,
 	FOOTER_CACHE_KEY,
-	FOOTER_RATE_KEY,
-	FOOTER_COST_KEY,
-	PI_USAGE_KEY,
 ] as const;
 
-/** 默认第二行。cwd 在前，git 在后。 */
-export const DEFAULT_FOOTER_LINE2_KEYS = [FOOTER_CWD_KEY, FOOTER_GIT_KEY] as const;
+/** 默认第二行：空（全部芯片已在第一行）。 */
+export const DEFAULT_FOOTER_LINE2_KEYS = [] as const;
 
 /** 改成可排布之前就写死的项。pi-usage 不算：旧配置里本来就有它。 */
 const LEGACY_FIXED_FOOTER_KEYS = [

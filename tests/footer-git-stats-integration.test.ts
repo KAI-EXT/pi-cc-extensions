@@ -58,7 +58,8 @@ test("active footer switches working → branch → working without recreation o
 	};
 	applyCustomFooter(ctx as never);
 	t.after(() => footer.dispose());
-	const line = () => footer.render(200)[1];
+	// 新默认布局全部芯片在 line1：拼接全文匹配，不依赖行号。
+	const line = () => footer.render(200).join("\n");
 	const waitForStats = async (stats: string) => {
 		const deadline = Date.now() + 5000;
 		while (!line().includes(stats)) {
