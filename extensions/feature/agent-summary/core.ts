@@ -38,8 +38,10 @@ export type AgentSummaryData = {
 	turns: number;
 	/** 最后一轮使用的模型 id。 */
 	model: string;
-	/** 整段指令平均输出速率（tok/s，与 footer 同源），agent_end 时定格。 */
+		/** 整段指令平均输出速率（tok/s，与 footer 同源），agent_end 时定格。 */
 	tokensPerSec: number;
+	/** 回合结束时刻（毫秒时间戳）。 */
+	endedAt: number;
 };
 
 export function classifyTool(toolName: string): AgentToolCategory {
@@ -167,6 +169,7 @@ export class AgentRunSummary {
 			turns: this.turns,
 			model: this.model,
 			tokensPerSec: 0,
+			endedAt: now,
 		};
 	}
 }
@@ -242,6 +245,16 @@ function summaryParts(data: AgentSummaryData, options: AgentSummaryViewConfig): 
 			case "failed":
 				if (data.failed) parts.push(`✗${data.failed}`);
 				break;
+			case "done": {
+				// 回合结束时刻（本地时区 HH:MM）；0 = 无效时间戳，省略。
+				if (data.endedAt > 0) {
+					const d = new Date(data.endedAt);
+					const hh = String(d.getHours()).padStart(2, "0");
+					const mm = String(d.getMinutes()).padStart(2, "0");
+					parts.push(`done ${hh}:${mm}`);
+				}
+				break;
+			}
 			case "rate": {
 				// 与 footer 同源的整段平均输出速率（agent_end 时定格）。
 				if (data.tokensPerSec > 0) {
@@ -266,6 +279,7 @@ const DEFAULT_SUMMARY_KEYS = [
 	"tools",
 	"cost",
 	"failed",
+	"done",
 ];
 
 export function summaryMarkdown(

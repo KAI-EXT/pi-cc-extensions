@@ -95,7 +95,7 @@ pi install git:github.com/minuque/pi-cc-extensions
   "footerLine3Keys": []                    // 有可见芯片才占行
 
   // agent-summary（回合摘要行）
-  "agentSummaryKeys": ["duration", "tokens", "cache", "cache-hit", "rate", "tools", "cost", "failed"], // 段顺序与开关；可选：duration/tokens/cache/cache-hit/rate/reasoning/turns/model/tools/cost/failed
+  "agentSummaryKeys": ["duration", "tokens", "cache", "cache-hit", "rate", "tools", "cost", "failed", "done"], // 段顺序与开关；可选：duration/tokens/cache/cache-hit/rate/reasoning/turns/model/tools/cost/failed/done
   "agentSummarySep": " · ",                // 段分隔符
   "agentSummaryIcons": true,               // emoji 图标；false 为纯文本
   "agentSummaryMinTools": 0                // 触发显示的最小工具数；0 = 有任意内容就显示，2 = 恢复旧行为
@@ -119,11 +119,12 @@ pi install git:github.com/minuque/pi-cc-extensions
 | `tools` | `🔧 bash×19 edit×6 read×4` | bash 按调用计，read/edit/write 按文件去重，其余归 `other×N` | 无工具调用 |
 | `cost` | `💰 $0.05` | 本回合累计成本 | 模型未配置单价 |
 | `failed` | `✗1` | 失败的工具调用数 | 0 次失败 |
+| `done` | `done 19:24` | 回合结束时刻（本地时区 HH:MM） | — |
 
 示例（`agentSummaryIcons: false` 为纯文本模式，emoji 前缀消失）：
 
 ```
-│ ⚡ 9m55s · ↑12.4k ↓3.1k tok · ↗45k ↘210k cache · 󰆼 78% · avg 42 tok/s · 🔧 bash×19 edit×6 · 💰 $0.05 · ✗1
+│ ⚡ 9m55s · ↑12.4k ↓3.1k tok · ↗45k ↘210k cache · 󰆼 78% · avg 42 tok/s · 🔧 bash×19 edit×6 · 💰 $0.05 · ✗1 · done 19:24
 ```
 
 `agentSummaryMinTools` 控制整行是否出现：`0`（默认）只要回合有工具调用或 token 输出就显示；设为 `2` 恢复旧行为（工具数 ≥ 2 才显示）。

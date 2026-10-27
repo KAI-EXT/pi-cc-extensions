@@ -18,6 +18,12 @@ function stripAnsi(text: string): string {
 	return text.replace(/\x1b\[[0-?]*[ -/]*[@-~]/g, "");
 }
 
+/** 与 core.ts 的 done 段同一格式化，避免测试断言耦合时区。 */
+function doneLabel(ts: number): string {
+	const d = new Date(ts);
+	return `done ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
 test("classifyTool：bash/read/edit/write/other", () => {
 	assert.equal(classifyTool("bash"), "bash");
 	assert.equal(classifyTool("powershell"), "bash");
@@ -87,6 +93,7 @@ test("AgentRunSummary：计数去重；usage/缓存/思考/轮数/模型累计",
 		turns: 4,
 		model: "glm-5.3-flash",
 		tokensPerSec: 0,
+		endedAt: 61_000,
 	} satisfies AgentSummaryData);
 });
 
@@ -108,11 +115,12 @@ test("summaryMarkdown：emoji 分段风（默认段序）", () => {
 		turns: 4,
 		model: "",
 		tokensPerSec: 42,
+		endedAt: 42_000,
 	};
 	// 默认 keys 含 cache；cache/reasoning 等未收集到时自动省略
 	assert.equal(
 		summaryMarkdown(data),
-		"> *⚡ 42s · ↑12.4k ↓3.1k tok · ↗45k ↘210k cache · hit 78% · avg 42 tok/s · 🔧 bash×3 edit×1 read×2 write×1 · 💰 $0.05*",
+		`> *⚡ 42s · ↑12.4k ↓3.1k tok · ↗45k ↘210k cache · hit 78% · avg 42 tok/s · 🔧 bash×3 edit×1 read×2 write×1 · 💰 $0.05 · ${doneLabel(42_000)}*`,
 	);
 	// keys 重排 + turns/model/reasoning
 	assert.equal(
@@ -138,7 +146,7 @@ test("summaryMarkdown：emoji 分段风（默认段序）", () => {
 		"> *⚡ 42s | 💰 $0.05*",
 	);
 	// 有失败：追加 ✗N
-	assert.match(summaryMarkdown({ ...data, failed: 2 }), /· ✗2\*$/);
+	assert.match(summaryMarkdown({ ...data, failed: 2 }), /· ✗2 · done \d{2}:\d{2}\*$/);
 	// 全空：不渲染
 	assert.equal(
 		summaryMarkdown({
@@ -158,6 +166,7 @@ test("summaryMarkdown：emoji 分段风（默认段序）", () => {
 			turns: 0,
 			model: "",
 			tokensPerSec: 0,
+			endedAt: 0,
 		}),
 		"",
 	);
@@ -225,6 +234,7 @@ test("bindAgentSummary：agent_start 重置、turn_end 累计 usage、minTools �
 		turns: 2,
 		model: "",
 		tokensPerSec: 0,
+		endedAt: calls[1].endedAt,
 	});
 });
 

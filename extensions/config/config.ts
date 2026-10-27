@@ -153,6 +153,7 @@ export const DEFAULT_AGENT_SUMMARY_KEYS = [
 	"tools",
 	"cost",
 	"failed",
+	"done",
 ];
 /** agent-summary 支持的段 key；未知 key 在 normalize 时丢弃。 */
 export const AGENT_SUMMARY_KEY_VALUES = [
