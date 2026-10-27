@@ -11,7 +11,6 @@ import {
 	VStack,
 	visibleWidth,
 } from "@earendil-works/pi-tui";
-import { createJiti } from "jiti";
 import { config, formatConfigStatus, normalizeConfig } from "../extensions/config/config.ts";
 import { setToolTuiFullscreen } from "../extensions/renderer/tool/names.ts";
 import {
@@ -404,13 +403,13 @@ test("sticky prompt: frame patch composites through the alt-screen hook and rest
 });
 
 test("sticky prompt: a stale dispose leaves the replacement patches alive", async () => {
-	const load = async () => {
-		const jiti = createJiti(import.meta.url, { moduleCache: false });
-		const path = new URL("../extensions/renderer/mouse/sticky-prompt.ts", import.meta.url).pathname;
-		return (await jiti.import(path)) as any;
-	};
-	const first = await load();
-	const second = await load();
+	// 用 ESM 查询串产生两个真实模块实例（等价 /reload）：同一原型、同一 globalThis
+	// 注册表，只有模块级 patch 引用各自独立。不用 jiti——它在 Node 上默认
+	// tryNative=false，会把 node_modules 的 ESM 依赖重新求值，补丁落到私有类副本，
+	// 测不到跨实例的原型让渡。
+	const moduleUrl = new URL("../extensions/renderer/mouse/sticky-prompt.ts", import.meta.url).href;
+	const first = (await import(`${moduleUrl}?instance=first`)) as any;
+	const second = (await import(`${moduleUrl}?instance=second`)) as any;
 	assert.notEqual(
 		first.installStickyPromptPatches,
 		second.installStickyPromptPatches,
