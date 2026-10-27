@@ -165,12 +165,14 @@ export const DEFAULT_AGENT_SUMMARY_KEYS = [
 	"tools",
 	"done",
 ];
-/** agent-summary 支持的段 key；未知 key 在 normalize 时丢弃。 */
+/** agent-summary 支持的段 key；未知 key 在 normalize 时丢弃。与 README「可选段」表保持一致。 */
 export const AGENT_SUMMARY_KEY_VALUES = [
 	...DEFAULT_AGENT_SUMMARY_KEYS,
 	"reasoning",
-	"turns",
 	"model",
+	"cache",
+	"cost",
+	"failed",
 ];
 
 export const DEFAULT_CONFIG: Config = {

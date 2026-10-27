@@ -30,8 +30,19 @@ import {
 } from "../feature/shell/footer-layout.ts";
 import { applyPromptEditor, clearPromptEditor } from "../feature/shell/prompt-editor.ts";
 import { applyStartupHeader, clearStartupHeader } from "../feature/shell/startup-header.ts";
+import { setTokenSpeedOptions } from "../feature/shell/token-rate.ts";
+import {
+	resolveTokenSpeed,
+	TOKEN_SPEED_DISPLAYS,
+	type TokenSpeedConfig,
+	type TokenSpeedCountStrategy,
+	type TokenSpeedDisplay,
+	type TokenSpeedEndTpsBehavior,
+	type TokenSpeedTier,
+} from "../feature/shell/token-speed-config.ts";
 import type { ToolGroupingHooks } from "../renderer/tool/grouping.ts";
 import {
+	AGENT_SUMMARY_KEY_VALUES,
 	config,
 	DEFAULT_CONFIG,
 	DIFF_COLLAPSED_LINES_VALUES,
@@ -308,6 +319,63 @@ function buildExcludeRenderersSubmenu(
 	};
 }
 
+function agentSummaryKeysDescription(keys: readonly string[]): string {
+	return `${keys.length}/${AGENT_SUMMARY_KEY_VALUES.length} segments on. Enter to toggle; at least one stays on.`;
+}
+
+/** agentSummaryKeys 段开关子面板：按 canonical 顺序列出全部段，禁用即从数组移除，至少保留一段。 */
+function buildAgentSummaryKeysSubmenu(
+	onClose: () => void,
+	onLiveChange: () => void,
+): {
+	render: (width: number) => string[];
+	invalidate: () => void;
+	handleInput: (data: string) => void;
+} {
+	const items = AGENT_SUMMARY_KEY_VALUES.map((key) => ({
+		id: key,
+		label: key,
+		description: `Show the ${key} segment in the round summary line.`,
+		currentValue: config.agentSummaryKeys.includes(key) ? "on" : "off",
+		values: ["on", "off"],
+	}));
+	const list = new SettingsList(
+		items,
+		Math.min(8, Math.max(4, items.length)),
+		getSettingsListTheme(),
+		(key: string, value: string) => {
+			const enabled = new Set(config.agentSummaryKeys);
+			if (value === "on") {
+				enabled.add(key);
+			} else {
+				// 至少保留一段：拒绝关闭最后一段，恢复该行显示。
+				if (enabled.size <= 1) {
+					const item = items.find((candidate) => candidate.id === key);
+					if (item) item.currentValue = "on";
+					return;
+				}
+				enabled.delete(key);
+			}
+			// 段顺序即渲染顺序：重排回 canonical 顺序，禁用的从数组移除。
+			updateConfig({
+				agentSummaryKeys: AGENT_SUMMARY_KEY_VALUES.filter((candidate) => enabled.has(candidate)),
+			});
+			onLiveChange();
+		},
+		() => onClose(),
+		{ enableSearch: false },
+	);
+	return {
+		render: (width: number) => [
+			...list.render(width),
+			"",
+			truncateToWidth("  Esc back to Features", width),
+		],
+		invalidate: () => list.invalidate(),
+		handleInput: (data: string) => list.handleInput(data),
+	};
+}
+
 function footerCurrencyRateLabel(rate: number | null): string {
 	return rate === null ? "-" : String(rate);
 }
@@ -380,6 +448,131 @@ function buildNumberInputSubmenu(
 		},
 		closeSubmenu,
 	);
+}
+
+/** tokenSpeed 面板行：setting 交给 SettingsList，refresh 在写回后从 config 重读 currentValue/description。 */
+function tokenSpeedRow(
+	id: string,
+	label: string,
+	readCurrent: () => string,
+	describe: () => string,
+	extra: {
+		values?: string[];
+		submenu?: (current: string, closeSubmenu: (selected?: string) => void) => unknown;
+	} = {},
+) {
+	const setting = { id, label, description: describe(), currentValue: readCurrent(), ...extra };
+	return {
+		setting,
+		refresh(): void {
+			setting.currentValue = readCurrent();
+			setting.description = describe();
+		},
+	};
+}
+
+// ── tokenSpeed（pi-token-speed 配置族）面板预设与文案 ─────────────────────
+
+/** 图标预设循环首项：none 表示空串（无图标）。 */
+const TOKEN_SPEED_ICON_PRESETS = ["none", "⚡", "🔥", "💨", "🚀"];
+const TOKEN_SPEED_WINDOW_PRESETS = ["1000", "3000", "5000", "10000", "15000"];
+/** 预设色循环：四档默认色 + 常见色（面板无颜色编辑先例，按预设循环交互）。 */
+const TOKEN_SPEED_COLOR_PRESETS = [
+	"#ff4444",
+	"#ff8844",
+	"#ffaa00",
+	"#ffdd44",
+	"#00ff88",
+	"#44ddff",
+	"#8888ff",
+	"#ff66ff",
+	"#ffffff",
+	"#888888",
+];
+/** 四档阈值预设；写回时经 clampTokenSpeedThreshold 收敛，保持严格升序。 */
+const TOKEN_SPEED_THRESHOLD_PRESETS: Record<TokenSpeedTier, string[]> = {
+	slow: ["0", "5", "10", "15", "20"],
+	medium: ["10", "15", "20", "25", "30"],
+	fast: ["20", "30", "40", "50", "60"],
+	blazing: ["40", "45", "60", "90", "120"],
+};
+const TOKEN_SPEED_TIERS: readonly TokenSpeedTier[] = ["slow", "medium", "fast", "blazing"];
+
+/** 档位行的面板 id：tokenSpeedThresholdSlow / tokenSpeedColorBlazing 等。 */
+const tokenSpeedTierId = (prefix: string, tier: TokenSpeedTier): string =>
+	`${prefix}${tier[0].toUpperCase()}${tier.slice(1)}`;
+
+function tokenSpeedDisplayDescription(display: TokenSpeedDisplay): string {
+	if (display === "legacy") return "Classic chip: avg/live label + tok/s, TTFT per its own toggle.";
+	if (display === "tps") return "Rate only, e.g. 42 tok/s, tier-colored by the thresholds below.";
+	if (display === "ttft") return "Rate + time to first token, e.g. 42 tok/s (TTFT: 812ms).";
+	if (display === "stats") return "Rate + tokens and elapsed, e.g. 42 tok/s (150 tok in 6.0s).";
+	return "Rate + tokens, elapsed, and TTFT in one chip.";
+}
+
+function tokenSpeedCountStrategyDescription(strategy: TokenSpeedCountStrategy): string {
+	return strategy === "direct"
+		? "Count one token per streamed delta. Predictable on English text; overcounts CJK."
+		: "Estimate tokens from text length (CJK ~1/char, otherwise ~4 chars/token).";
+}
+
+function tokenSpeedEndTpsDescription(behavior: TokenSpeedEndTpsBehavior): string {
+	return behavior === "last"
+		? "When streaming ends, keep the last sliding-window value."
+		: "When streaming ends, fall back to the whole-run average.";
+}
+
+/**
+ * 单档阈值写回：阈值必须严格升序（normalizeThresholds 整块校验，非法整块回落默认），
+ * 编辑单档时向相邻档收敛，保证写回永远合法。
+ */
+function clampTokenSpeedThreshold(
+	speed: TokenSpeedConfig,
+	tier: TokenSpeedTier,
+	raw: string,
+): TokenSpeedConfig["thresholds"] {
+	const value = Math.max(0, Math.floor(Number(raw) || 0));
+	const t = speed.thresholds;
+	switch (tier) {
+		case "slow":
+			return { ...t, slow: Math.min(value, t.medium - 1) };
+		case "medium":
+			return { ...t, medium: Math.min(Math.max(value, t.slow + 1), t.fast - 1) };
+		case "fast":
+			return { ...t, fast: Math.min(Math.max(value, t.medium + 1), t.blazing - 1) };
+		case "blazing":
+			return { ...t, blazing: Math.max(value, t.fast + 1) };
+	}
+}
+
+/** tokenSpeed 面板行 id → 配置字段补丁；非编辑行返回 undefined。 */
+function tokenSpeedPatch(
+	speed: TokenSpeedConfig,
+	id: string,
+	value: string,
+): Partial<TokenSpeedConfig> | undefined {
+	const thresholdTier = TOKEN_SPEED_TIERS.find(
+		(tier) => tokenSpeedTierId("tokenSpeedThreshold", tier) === id,
+	);
+	if (thresholdTier) return { thresholds: clampTokenSpeedThreshold(speed, thresholdTier, value) };
+	const colorTier = TOKEN_SPEED_TIERS.find(
+		(tier) => tokenSpeedTierId("tokenSpeedColor", tier) === id,
+	);
+	if (colorTier) return { colors: { ...speed.colors, [colorTier]: value } };
+	switch (id) {
+		case "tokenSpeedDisplay":
+			return { display: value as TokenSpeedDisplay };
+		case "tokenSpeedIcon":
+			return { icon: value === "none" ? "" : value };
+		case "tokenSpeedCountStrategy":
+			return { countStrategy: value as TokenSpeedCountStrategy };
+		case "tokenSpeedEndTpsBehavior":
+			return { endTpsBehavior: value as TokenSpeedEndTpsBehavior };
+		case "tokenSpeedSlidingWindow":
+			return { slidingWindow: Number(value) };
+		default:
+			return undefined;
+	}
 }
 
 /** Section tabs for /ccstyle — matches Zentui-style "A / B / C" headers. */
@@ -648,6 +841,53 @@ export async function showCcstylePanel(
 			"Agent summary disabled.",
 			config.enableAgentSummary,
 		);
+		const agentSummaryKeysSetting = {
+			id: "agentSummaryKeys",
+			label: "Summary segments",
+			description: agentSummaryKeysDescription(config.agentSummaryKeys),
+			currentValue: config.agentSummaryKeys.join(", "),
+			submenu: (_current: string, closeSubmenu: (selected?: string) => void) => {
+				nestedSubmenuOpen = true;
+				nestedHint = "  Enter/Space to toggle · Esc back to Features";
+				return buildAgentSummaryKeysSubmenu(
+					() => {
+						nestedSubmenuOpen = false;
+						nestedHint = "";
+						agentSummaryKeysSetting.currentValue = config.agentSummaryKeys.join(", ");
+						agentSummaryKeysSetting.description = agentSummaryKeysDescription(
+							config.agentSummaryKeys,
+						);
+						closeSubmenu();
+					},
+					() => {
+						agentSummaryKeysSetting.currentValue = config.agentSummaryKeys.join(", ");
+						agentSummaryKeysSetting.description = agentSummaryKeysDescription(
+							config.agentSummaryKeys,
+						);
+						// 摘要行渲染期读 config，刷新 transcript 让段落增减立即上屏。
+						hooks.refreshCurrentTranscript(ctx);
+					},
+				);
+			},
+		};
+		const agentSummaryDoneDateSetting = {
+			id: "agentSummaryDoneDate",
+			label: "Summary done date",
+			description: config.agentSummaryDoneDate
+				? "Done segment shows the date, e.g. done 03-14 19:24."
+				: "Done segment shows the time only, e.g. done 19:24.",
+			currentValue: config.agentSummaryDoneDate ? "on" : "off",
+			values: ["on", "off"],
+		};
+		const agentSummaryItalicSetting = {
+			id: "agentSummaryItalic",
+			label: "Summary italic",
+			description: config.agentSummaryItalic
+				? "Summary line renders in italics (Claude Code style)."
+				: "Summary line renders upright.",
+			currentValue: config.agentSummaryItalic ? "on" : "off",
+			values: ["on", "off"],
+		};
 		const workingMessageToggle = featureToggleSetting(
 			"enableWorkingMessage",
 			"Working message",
@@ -781,6 +1021,95 @@ export async function showCcstylePanel(
 			currentValue: config.footerTokenRateTtft ? "on" : "off",
 			values: ["on", "off"],
 		};
+		// tokenSpeed 编辑行：display/colors/icon 走渲染期读 config 的现有机制即时生效；
+		// countStrategy/endTpsBehavior/slidingWindow 由 onSettingChange 里 setTokenSpeedOptions
+		// 重注入引擎，同样即时（providerOverrides 命中时按活动模型 provider 解析）。
+		const tokenSpeedDisplayRow = tokenSpeedRow(
+			"tokenSpeedDisplay",
+			"Token speed display",
+			() => config.tokenSpeed.display,
+			() => tokenSpeedDisplayDescription(config.tokenSpeed.display),
+			{ values: [...TOKEN_SPEED_DISPLAYS] },
+		);
+		const tokenSpeedIconRow = tokenSpeedRow(
+			"tokenSpeedIcon",
+			"Token speed icon",
+			() => config.tokenSpeed.icon || "none",
+			() =>
+				config.tokenSpeed.icon
+					? `Glyph prefixing the rate chip, currently ${config.tokenSpeed.icon}.`
+					: "No glyph before the rate chip.",
+			{ values: [...TOKEN_SPEED_ICON_PRESETS] },
+		);
+		const tokenSpeedCountRow = tokenSpeedRow(
+			"tokenSpeedCountStrategy",
+			"Token count strategy",
+			() => config.tokenSpeed.countStrategy,
+			() => tokenSpeedCountStrategyDescription(config.tokenSpeed.countStrategy),
+			{ values: ["estimate", "direct"] },
+		);
+		const tokenSpeedEndTpsRow = tokenSpeedRow(
+			"tokenSpeedEndTpsBehavior",
+			"End-of-stream TPS",
+			() => config.tokenSpeed.endTpsBehavior,
+			() => tokenSpeedEndTpsDescription(config.tokenSpeed.endTpsBehavior),
+			{ values: ["average", "last"] },
+		);
+		const tokenSpeedWindowRow = tokenSpeedRow(
+			"tokenSpeedSlidingWindow",
+			"Sliding window ms",
+			() => String(config.tokenSpeed.slidingWindow),
+			() => "Live-rate window in ms; wider smooths bursty servers. Config clamps to 100..30000.",
+			{ values: [...TOKEN_SPEED_WINDOW_PRESETS] },
+		);
+		// 阈值行同 Diff 页签数值交互：Space 循环预设，Enter 进数字输入子面板（写回时自动收敛升序）。
+		const tokenSpeedThresholdRows = TOKEN_SPEED_TIERS.map((tier) => {
+			const row = tokenSpeedRow(
+				tokenSpeedTierId("tokenSpeedThreshold", tier),
+				`Threshold ${tier}`,
+				() => String(config.tokenSpeed.thresholds[tier]),
+				() => "Rate tier bound in tok/s; kept strictly ascending by auto-clamping.",
+				{ values: [...TOKEN_SPEED_THRESHOLD_PRESETS[tier]] },
+			);
+			row.setting.submenu = (_current: string, closeSubmenu: (selected?: string) => void) =>
+				buildNumberInputSubmenu(theme, row.setting, closeSubmenu);
+			return row;
+		});
+		const tokenSpeedColorRows = TOKEN_SPEED_TIERS.map((tier) =>
+			tokenSpeedRow(
+				tokenSpeedTierId("tokenSpeedColor", tier),
+				`${tier[0].toUpperCase()}${tier.slice(1)} tier color`,
+				() => config.tokenSpeed.colors[tier],
+				() => `Truecolor for ${tier}-tier rate numbers. Enter/Space cycles preset colors.`,
+				{ values: [...TOKEN_SPEED_COLOR_PRESETS] },
+			),
+		);
+		const tokenSpeedOverridesRow = tokenSpeedRow(
+			"tokenSpeedProviderOverrides",
+			"Provider overrides",
+			() => {
+				const providers = Object.keys(config.tokenSpeed.providerOverrides);
+				return providers.length === 0 ? "none" : `${providers.length}: ${providers.join(", ")}`;
+			},
+			() => {
+				const entries = Object.entries(config.tokenSpeed.providerOverrides);
+				return entries.length === 0
+					? "No per-provider tokenSpeed overrides. Edit ~/.pi/agent/pi-cc-extensions.json to add them."
+					: `Read-only here: ${entries
+							.map(([provider, override]) => `${provider} (${Object.keys(override).length} keys)`)
+							.join(", ")}. Edit the config file to change.`;
+			},
+		);
+		const tokenSpeedRows = [
+			tokenSpeedDisplayRow,
+			tokenSpeedIconRow,
+			tokenSpeedCountRow,
+			tokenSpeedEndTpsRow,
+			tokenSpeedWindowRow,
+			...tokenSpeedThresholdRows,
+			...tokenSpeedColorRows,
+			tokenSpeedOverridesRow,
+		];
 		const pluginChipsSetting = {
 			id: "footerPluginChips",
 			label: "Footer chips",
@@ -877,6 +1206,21 @@ export async function showCcstylePanel(
 				footerTokenRateTtftSetting.currentValue = enabled ? "on" : "off";
 				footerTokenRateTtftSetting.description = footerTokenRateTtftDescription(enabled);
 				ctx.ui.notify(`Updated ${id}: ${value}`, "info");
+				return;
+			}
+			// tokenSpeed 配置族：整段深拷贝写回（updateConfig 会整体 normalize），行显示从 config 重读；
+			// 引擎口径（countStrategy/endTpsBehavior/slidingWindow）同步重注入，providerOverrides 命中时
+			// 按活动模型 provider 解析（同 session_start/model_select 的刷新口径）。
+			const speedRow = tokenSpeedRows.find((row) => row.setting.id === id);
+			if (speedRow) {
+				const patch = tokenSpeedPatch(config.tokenSpeed, id, value);
+				if (patch) {
+					updateConfig({ tokenSpeed: { ...config.tokenSpeed, ...patch } });
+					setTokenSpeedOptions(resolveTokenSpeed(config.tokenSpeed, ctx?.model?.provider));
+					for (const row of tokenSpeedRows) row.refresh();
+					hooks.refreshCurrentTranscript(ctx);
+					ctx.ui.notify(`Updated ${id}: ${speedRow.setting.currentValue}`, "info");
+				}
 				return;
 			}
 			if (id === "enableEditorPrefix") {
@@ -1003,6 +1347,18 @@ export async function showCcstylePanel(
 				case "useSummaryTitlesAsThinkingTitle":
 					updateConfig({ useSummaryTitlesAsThinkingTitle: value === "on" });
 					break;
+				case "agentSummaryDoneDate":
+					updateConfig({ agentSummaryDoneDate: value === "on" });
+					agentSummaryDoneDateSetting.description = config.agentSummaryDoneDate
+						? "Done segment shows the date, e.g. done 03-14 19:24."
+						: "Done segment shows the time only, e.g. done 19:24.";
+					break;
+				case "agentSummaryItalic":
+					updateConfig({ agentSummaryItalic: value === "on" });
+					agentSummaryItalicSetting.description = config.agentSummaryItalic
+						? "Summary line renders in italics (Claude Code style)."
+						: "Summary line renders upright.";
+					break;
 				case "previewLines":
 					updateConfig({ previewLines: pickPositiveInt(value, DEFAULT_CONFIG.previewLines, 0) });
 					thinkingPreviewSetting.currentValue = String(config.previewLines);
@@ -1060,6 +1416,9 @@ export async function showCcstylePanel(
 					subagentAutocompleteToggle.setting,
 					contextCommandToggle.setting,
 					agentSummaryToggle.setting,
+					agentSummaryKeysSetting,
+					agentSummaryDoneDateSetting,
+					agentSummaryItalicSetting,
 					workingMessageToggle.setting,
 					aliasesToggle.setting,
 					markdownEnhanceToggle.setting,
@@ -1104,6 +1463,7 @@ export async function showCcstylePanel(
 					footerTokenRateSetting,
 					footerTokenRateModeSetting,
 					footerTokenRateTtftSetting,
+					...tokenSpeedRows.map((row) => row.setting),
 					footerCurrencySetting,
 					footerCurrencyRateSetting,
 					footerNerdIconsSetting,

@@ -86,7 +86,7 @@ export const DEFAULT_TOKEN_SPEED: TokenSpeedConfig = {
 
 const TOKEN_SPEED_COUNT_STRATEGIES: TokenSpeedCountStrategy[] = ["estimate", "direct"];
 const TOKEN_SPEED_END_TPS_BEHAVIORS: TokenSpeedEndTpsBehavior[] = ["average", "last"];
-const TOKEN_SPEED_DISPLAYS: TokenSpeedDisplay[] = ["legacy", "tps", "ttft", "stats", "full"];
+export const TOKEN_SPEED_DISPLAYS: TokenSpeedDisplay[] = ["legacy", "tps", "ttft", "stats", "full"];
 const DISPLAY_COLOR_KEYS = ["count", "elapsed", "ttft"] as const;
 const TIER_COLOR_KEYS = ["slow", "medium", "fast", "blazing"] as const;
 const SLIDING_WINDOW_MIN = 100;
