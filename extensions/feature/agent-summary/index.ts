@@ -41,7 +41,14 @@ export default function (pi: ExtensionAPI): void {
 			},
 		);
 		if (!line) return undefined;
-		return new Markdown(line, 1, 0, getMarkdownTheme());
+		// pi-tui 对引用块的渲染硬编码整行 italic（markdown.js blockquote: theme.quote(theme.italic(text))），
+		// 连 Nerd Font 图标一起斜。italic 配置为 false（默认）时注入恒等 italic 的主题包装：
+		// 保留引用块竖线/灰底视觉，去掉斜体；italic: true 时走原样斜体。
+		const baseTheme = getMarkdownTheme();
+		const mdTheme = italic
+			? baseTheme
+			: Object.assign(Object.create(baseTheme), { italic: (text: string) => text });
+		return new Markdown(line, 1, 0, mdTheme);
 	});
 
 	const { minTools } = getAgentSummaryConfig(config);

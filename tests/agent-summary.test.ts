@@ -126,7 +126,7 @@ test("summaryMarkdown：emoji 分段风（默认段序）", () => {
 	// 默认 keys 含 cache；cache/reasoning 等未收集到时自动省略
 	assert.equal(
 		summaryMarkdown(data),
-		`> ⚡ 42s · ↑12.4k ↓3.1k tok · avg 42 tok/s · hit 78% · 󰑓 4 · ⛏ bash×3 edit×1 read×2 write×1 · ${doneLabel(42_000, false)}`,
+		`> ⚡ 42s · ↑12.4k ↓3.1k tok · 42 tok/s · hit 78% · 󰑓 4 · ⛏ bash×3 edit×1 read×2 write×1 · ${doneLabel(42_000, false)}`,
 	);
 	// keys 重排 + turns/model/reasoning
 	assert.equal(
@@ -138,7 +138,7 @@ test("summaryMarkdown：emoji 分段风（默认段序）", () => {
 				cacheIcon: "󰆼",
 			},
 		),
-		"> 🤖 glm-5.3-flash · avg 42 tok/s · ↑12.4k ↓3.1k tok · 🧠 1.8k · 󰑓 4 · 󰆼 78% · ⚡ 42s",
+		"> 🤖 glm-5.3-flash · 42 tok/s · ↑12.4k ↓3.1k tok · 🧠 1.8k · 󰑓 4 · 󰆼 78% · ⚡ 42s",
 	);
 	// icons=false：纯文本
 	assert.equal(
@@ -229,7 +229,7 @@ test("summaryMarkdown：rate 段按 tokenSpeed 四档真彩着色，且不再整
 			{ success: "", failed: "" },
 			{ keys: ["rate"], tokenSpeed: DEFAULT_TOKEN_SPEED },
 		),
-		"> avg \x1b[38;2;0;255;136m42\x1b[0m tok/s",
+		"> \x1b[38;2;0;255;136m42\x1b[0m tok/s",
 	);
 	// 16 tok/s → medium 档 #ffaa00
 	assert.match(
@@ -246,7 +246,7 @@ test("summaryMarkdown：rate 段按 tokenSpeed 四档真彩着色，且不再整
 		{ success: "\x1b[32m", failed: "" },
 		{ keys: ["rate", "done"], tokenSpeed: DEFAULT_TOKEN_SPEED },
 	);
-	assert.match(mixed, /avg \x1b\[38;2;0;255;136m42\x1b\[0m tok\/s · done/);
+	assert.match(mixed, /\x1b\[38;2;0;255;136m42\x1b\[0m tok\/s · done/);
 	assert.doesNotMatch(mixed, /\x1b\[32m\x1b\[38;2/);
 });
 

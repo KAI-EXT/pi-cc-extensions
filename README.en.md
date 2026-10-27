@@ -95,6 +95,7 @@ Renderer snapshots for `on` / `compact` modes: [default](./docs/tool-render-exam
   "footerLine3Keys": [],                   // painted only when a chip is visible
 
   // tokenSpeed (output rate tiers, from pi-token-speed): the footer rate chip and the summary line's rate segment are tier-colored
+  // Full parameter reference and examples: docs/token-speed.md
   // Note: the rate chip renders only if "rate" is listed in footerLine*Keys.
   "tokenSpeed": {
     "thresholds": { "slow": 0, "medium": 15, "fast": 30, "blazing": 45 }, // four tiers (tok/s), non-negative strictly ascending integers; invalid block falls back to defaults
@@ -110,7 +111,7 @@ Renderer snapshots for `on` / `compact` modes: [default](./docs/tool-render-exam
     "slidingWindow": 1000,                   // live sliding window in ms, range 100..30000 (30s hard cap)
     "updateInterval": 0,                     // kept but inert: the pi TUI render pipeline already coalesces frames (dedup + 16ms frame throttle)
     "formatDuration": false,                 // duration formatting: 92.3s → 1m 32s (the elapsed suffix in stats/full modes)
-    "display": "legacy",                     // chip shape: legacy (default, avg/live labels) / tps (`25 tok/s`) / ttft (`25 tok/s (TTFT: 450ms)`), stats (`25 tok/s (150 tok in 6.0s)`), full (both segments joined with `·`)
+    "display": "legacy",                     // chip shape: legacy (default, current format: no label, live prefix in live mode) / tps (`25 tok/s`) / ttft (`25 tok/s (TTFT: 450ms)`), stats (`25 tok/s (150 tok in 6.0s)`), full (both segments joined with `·`)
     "displayColors": {                       // suffix colors for non-legacy modes (token count / elapsed / TTFT segments); missing fields stay unpainted, invalid hex is dropped
       "count": "#00ff88",
       "elapsed": "#ffaa00",
@@ -144,7 +145,7 @@ The turn summary line renders segments in `agentSummaryKeys` order; segments wit
 | `reasoning` | `🧠 1.8k` | Reasoning tokens (subset of `output`) | provider reports none |
 | `turns` | `󰑓 4` | Model request count | 0 turns |
 | `model` | `🤖 glm-5.3-flash` | Model of the last turn | — |
-| `rate` | `avg 42 tok/s` | Average output rate, same source as the footer rate chip, tier-colored via `tokenSpeed`; frozen at `agent_end` so replays stay stable | no rate data |
+| `rate` | `42 tok/s` | Average output rate, same source as the footer rate chip, tier-colored via `tokenSpeed`; frozen at `agent_end` so replays stay stable | no rate data |
 | `tools` | `⛏ bash×19 edit×6 read×4` | bash counts calls; read/edit/write dedupe by file; rest are `other×N` | no tool calls |
 | `cost` | `💰 $0.05` | Accumulated turn cost | model has no pricing |
 | `failed` | `✗1` | Failed tool calls | 0 failures |
@@ -153,7 +154,7 @@ The turn summary line renders segments in `agentSummaryKeys` order; segments wit
 Example (`agentSummaryIcons: false` drops the emoji prefixes):
 
 ```
-│ ⚡ 9m55s · ↑12.4k ↓3.1k tok · ↗45k ↘210k cache · 󰆼 78% · avg 42 tok/s · ⛏ bash×19 edit×6 · 💰 $0.05 · ✗1 · done 19:24
+│ ⚡ 9m55s · ↑12.4k ↓3.1k tok · ↗45k ↘210k cache · 󰆼 78% · 42 tok/s · ⛏ bash×19 edit×6 · 💰 $0.05 · ✗1 · done 19:24
 ```
 
 `agentSummaryMinTools` gates the whole line: `0` (default) shows whenever the turn had tool calls or token output; set `2` for the legacy behavior (≥ 2 tool calls).

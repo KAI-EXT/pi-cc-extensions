@@ -43,27 +43,27 @@ describe("token rate", { concurrency: false }, () => {
 		assert.equal(formatTokenRate(0), "");
 		assert.equal(formatTokenRate(-1), "");
 		assert.equal(formatTokenRate(Number.NaN), "");
-		assert.equal(formatTokenRate(42.4), "avg 42 tok/s");
-		assert.equal(formatTokenRate(99.6), "avg 100 tok/s");
-		assert.equal(formatTokenRate(1234), "avg 1.2k tok/s");
-		assert.equal(formatTokenRate(10500), "avg 10.5k tok/s");
+		assert.equal(formatTokenRate(42.4), "42 tok/s");
+		assert.equal(formatTokenRate(99.6), "100 tok/s");
+		assert.equal(formatTokenRate(1234), "1.2k tok/s");
+		assert.equal(formatTokenRate(10500), "10.5k tok/s");
 	});
 
 	test("formatTokenRate appends TTFT only when present", () => {
-		assert.equal(formatTokenRate(1200, 0), "avg 1.2k tok/s");
-		assert.equal(formatTokenRate(1200, 812.4), "avg 1.2k tok/s (TTFT: 812ms)");
-		assert.equal(formatTokenRate(1200, -5), "avg 1.2k tok/s");
+		assert.equal(formatTokenRate(1200, 0), "1.2k tok/s");
+		assert.equal(formatTokenRate(1200, 812.4), "1.2k tok/s (TTFT: 812ms)");
+		assert.equal(formatTokenRate(1200, -5), "1.2k tok/s");
 		assert.equal(formatTokenRate(1200, 812, "live"), "live 1.2k tok/s (TTFT: 812ms)");
-		assert.equal(formatTokenRate(1200, 812, "average", false), "avg 1.2k tok/s");
-		assert.equal(formatTokenRate(1200, 999.4), "avg 1.2k tok/s (TTFT: 999ms)");
-		assert.equal(formatTokenRate(1200, 1000), "avg 1.2k tok/s (TTFT: 1.0s)");
-		assert.equal(formatTokenRate(1200, 12_340), "avg 1.2k tok/s (TTFT: 12.3s)");
+		assert.equal(formatTokenRate(1200, 812, "average", false), "1.2k tok/s");
+		assert.equal(formatTokenRate(1200, 999.4), "1.2k tok/s (TTFT: 999ms)");
+		assert.equal(formatTokenRate(1200, 1000), "1.2k tok/s (TTFT: 1.0s)");
+		assert.equal(formatTokenRate(1200, 12_340), "1.2k tok/s (TTFT: 12.3s)");
 	});
 
 	test("formatTokenRate paints only the rate value when a painter is given", () => {
 		const paint = (value: string) => `<${value}>`;
-		assert.equal(formatTokenRate(42.4, 0, "average", true, paint), "avg <42> tok/s");
-		assert.equal(formatTokenRate(1234, 0, "average", true, paint), "avg <1.2k> tok/s");
+		assert.equal(formatTokenRate(42.4, 0, "average", true, paint), "<42> tok/s");
+		assert.equal(formatTokenRate(1234, 0, "average", true, paint), "<1.2k> tok/s");
 		assert.equal(
 			formatTokenRate(1234, 812, "live", true, paint),
 			"live <1.2k> tok/s (TTFT: 812ms)",

@@ -83,7 +83,7 @@ pi install git:github.com/minuque/pi-cc-extensions
   // footer
   "enableCustomFooter": true,              // 自定义状态栏
   "footerTokenRate": true,                 // 输出速率芯片；false 隐藏
-  "footerTokenRateMode": "average",        // average：整段指令平均（avg）；live：最近 1 秒瞬时（live）
+  "footerTokenRateMode": "average",        // average：整段指令平均；live：最近 1 秒瞬时（live 模式带 live 前缀）
   "footerTokenRateTtft": true,             // 速率芯片是否带 TTFT；false 只显示 tok/s
   "footerCurrency": "USD",                 // 底栏费用的显示币种
   "footerCurrencyRate": null,              // 1 单位费用换成多少显示币种；null 只换符号、不乘倍率
@@ -95,6 +95,7 @@ pi install git:github.com/minuque/pi-cc-extensions
   "footerLine3Keys": [],                   // 有可见芯片才占行
 
   // tokenSpeed（输出速率分级，源自 pi-token-speed）：footer 速率芯片与摘要行 rate 段按四档色着色
+  // 完整参数说明与效果案例见 docs/token-speed.md
   // 注意：速率芯片是否显示由 footerLine*Keys 决定——需在其中包含 "rate"。
   "tokenSpeed": {
     "thresholds": { "slow": 0, "medium": 15, "fast": 30, "blazing": 45 }, // 四档阈值（tok/s），须非负整数且严格升序；非法整块回落默认
@@ -110,7 +111,7 @@ pi install git:github.com/minuque/pi-cc-extensions
     "slidingWindow": 1000,                   // live 瞬时窗口毫秒，范围 100..30000（30s 硬顶）
     "updateInterval": 0,                     // 保留键不再生效：pi TUI 渲染管线已合帧（去重 + 16ms 帧节流），节流不再需要
     "formatDuration": false,                 // 耗时格式化：92.3s → 1m 32s（stats/full 模式的耗时后缀）
-    "display": "legacy",                     // 芯片形态：legacy（默认，沿用 avg/live 标签）/ tps（`25 tok/s`）/ ttft（`25 tok/s (TTFT: 450ms)`）/ stats（`25 tok/s (150 tok in 6.0s)`）/ full（两段合并，`·` 分隔）
+    "display": "legacy",                     // 芯片形态：legacy（默认，沿用现有格式：无标签，live 模式带 live 前缀）/ tps（`25 tok/s`）/ ttft（`25 tok/s (TTFT: 450ms)`）/ stats（`25 tok/s (150 tok in 6.0s)`）/ full（两段合并，`·` 分隔）
     "displayColors": {                       // 非 legacy 模式的后缀分色（token 数/耗时/TTFT 段）；字段缺省不上色，非法 hex 丢弃
       "count": "#00ff88",
       "elapsed": "#ffaa00",
@@ -144,7 +145,7 @@ pi install git:github.com/minuque/pi-cc-extensions
 | `reasoning` | `🧠 1.8k` | 思考 token（`output` 的子集） | provider 未上报 |
 | `turns` | `󰑓 4` | 模型请求轮数 | 0 轮 |
 | `model` | `🤖 glm-5.3-flash` | 最后一轮使用的模型 | — |
-| `rate` | `avg 42 tok/s` | 整段平均输出速率，与 footer 速率芯片同源，数字按 tokenSpeed 四档着色；`agent_end` 时定格，会话重放不漂移 | 无速率数据 |
+| `rate` | `42 tok/s` | 整段平均输出速率，与 footer 速率芯片同源，数字按 tokenSpeed 四档着色；`agent_end` 时定格，会话重放不漂移 | 无速率数据 |
 | `tools` | `⛏ bash×19 edit×6 read×4` | bash 按调用计，read/edit/write 按文件去重，其余归 `other×N` | 无工具调用 |
 | `cost` | `💰 $0.05` | 本回合累计成本 | 模型未配置单价 |
 | `failed` | `✗1` | 失败的工具调用数 | 0 次失败 |
@@ -153,7 +154,7 @@ pi install git:github.com/minuque/pi-cc-extensions
 示例（`agentSummaryIcons: false` 为纯文本模式，emoji 前缀消失）：
 
 ```
-│ ⚡ 9m55s · ↑12.4k ↓3.1k tok · ↗45k ↘210k cache · 󰆼 78% · avg 42 tok/s · ⛏ bash×19 edit×6 · 💰 $0.05 · ✗1 · done 19:24
+│ ⚡ 9m55s · ↑12.4k ↓3.1k tok · ↗45k ↘210k cache · 󰆼 78% · 42 tok/s · ⛏ bash×19 edit×6 · 💰 $0.05 · ✗1 · done 19:24
 ```
 
 `agentSummaryMinTools` 控制整行是否出现：`0`（默认）只要回合有工具调用或 token 输出就显示；设为 `2` 恢复旧行为（工具数 ≥ 2 才显示）。

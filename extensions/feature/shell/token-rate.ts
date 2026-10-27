@@ -1,7 +1,7 @@
 /**
  * footer 输出速率的共享状态：working-message 负责采集，footer 负责显示。
  *
- * average：一次用户指令的墙钟平均（工具等待计入分母），显示 `avg`。
+ * average：一次用户指令的墙钟平均（工具等待计入分母），默认口径无标签。
  * live：最近 slidingWindow（默认 1s，硬顶 30s）滑动窗口的瞬时速率，生成期暂停时钟，显示
  * `live`；段结束（carryTokenRate）清窗回落整段平均，endTpsBehavior='last' 时保持最后窗口值。
  * 攒批 flush（窗口内样本同刻）把时间跨度向前扩展包含距上批 token 的间隙，任何情况跨度最小
@@ -292,7 +292,7 @@ export function formatTtft(ttftMs: number): string {
 	return `${(ttftMs / 1000).toFixed(1)}s`;
 }
 
-/** `avg 1.2k tok/s (TTFT: 812ms)`；无数据显示空串，未出首 token 或 showTtft 为 false 时无括号段。
+/** `1.2k tok/s (TTFT: 812ms)`，live 模式带 `live ` 前缀；无数据显示空串，未出首 token 或 showTtft 为 false 时无括号段。
  *  paintValue 可选传入取色函数（P3 footer/摘要行共用 tokenSpeedRateAnsi），只包住速率数字。 */
 export function formatTokenRate(
 	rate: number,
@@ -306,8 +306,9 @@ export function formatTokenRate(
 	const value = paintValue ? paintValue(plain) : plain;
 	const ttft =
 		showTtft && Number.isFinite(ttftMs) && ttftMs > 0 ? ` (TTFT: ${formatTtft(ttftMs)})` : "";
-	const label = mode === "live" ? "live" : "avg";
-	return `${label} ${value} tok/s${ttft}`;
+	// average 为默认口径不加标签；live 保留标签以区分瞬时口径。
+	const label = mode === "live" ? "live " : "";
+	return `${label}${value} tok/s${ttft}`;
 }
 
 /** stats 后缀的耗时：formatDuration 开启走 m/h 折算，亚秒空串回落一位小数秒。 */
