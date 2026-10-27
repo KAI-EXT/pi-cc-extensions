@@ -92,7 +92,24 @@ pi install git:github.com/minuque/pi-cc-extensions
   "footerHiddenKeys": [],                  // 隐藏的芯片 key
   "footerLine1Keys": ["cwd", "pi-usage", "git", "model", "context", "cache"], // 每行芯片顺序；内置项与插件同一套排布
   "footerLine2Keys": [],                   // cwd：目录和会话名；git：分支和改动。可换到任意行
-  "footerLine3Keys": []                    // 有可见芯片才占行
+  "footerLine3Keys": [],                   // 有可见芯片才占行
+
+  // tokenSpeed（输出速率分级，源自 pi-token-speed；P1 仅配置层，尚未接入芯片行为）
+  "tokenSpeed": {
+    "thresholds": { "slow": 0, "medium": 15, "fast": 30, "blazing": 45 }, // 四档阈值（tok/s），须非负整数且严格升序；非法整块回落默认
+    "colors": {
+      "slow": "#ff4444",                     // 四档色（慢/中/快/极快）；单个颜色非法则该色回落默认
+      "medium": "#ffaa00",
+      "fast": "#00ff88",
+      "blazing": "#44ddff"
+    },
+    "icon": "",                              // 空 = 跟随 footerNerdIcons 默认图标；可设 ⚡/🔥/🚀 等
+    "countStrategy": "estimate",             // estimate（chars/4 估算，CJK 按 1 字 1 token）/ direct（1 delta=1 token，CJK 失真自担）
+    "endTpsBehavior": "average",             // average：流结束定格整段平均 / last：定格最后窗口值
+    "slidingWindow": 1000,                   // live 瞬时窗口毫秒，范围 100..30000（30s 硬顶）
+    "updateInterval": 0,                     // 渲染节流毫秒，范围 0..1000；0 = 每次增量都刷新
+    "formatDuration": false                  // 耗时格式化：92.3s → 1m 32.3s
+  }
 
   // agent-summary（回合摘要行）
   "agentSummaryKeys": ["duration", "tokens", "rate", "cache-hit", "turns", "tools", "done"], // 段顺序与开关；可选：duration/tokens/cache/cache-hit/rate/reasoning/turns/model/tools/cost/failed/done

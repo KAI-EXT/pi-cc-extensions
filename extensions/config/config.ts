@@ -5,6 +5,12 @@ import {
 	formatFooterChipSummary,
 	normalizeFooterChipLayout,
 } from "../feature/shell/footer-layout.ts";
+import {
+	DEFAULT_TOKEN_SPEED,
+	formatTokenSpeedSummary,
+	normalizeTokenSpeed,
+	type TokenSpeedConfig,
+} from "../feature/shell/token-speed-config.ts";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -92,6 +98,8 @@ export type Config = {
 	footerCurrencyRate: number | null;
 	footerNerdIcons: boolean;
 	footerGitStatsMode: FooterGitStatsMode;
+	/** tokenSpeed 分级配置段（源自 pi-token-speed），P2/P3 才接入行为。 */
+	tokenSpeed: TokenSpeedConfig;
 	footerHiddenKeys: string[];
 	footerLine1Keys: string[];
 	footerLine2Keys: string[];
@@ -200,6 +208,11 @@ export const DEFAULT_CONFIG: Config = {
 	footerCurrencyRate: null,
 	footerNerdIcons: true,
 	footerGitStatsMode: "working",
+	tokenSpeed: {
+		...DEFAULT_TOKEN_SPEED,
+		thresholds: { ...DEFAULT_TOKEN_SPEED.thresholds },
+		colors: { ...DEFAULT_TOKEN_SPEED.colors },
+	},
 	agentSummaryKeys: [...DEFAULT_AGENT_SUMMARY_KEYS],
 	agentSummarySep: " · ",
 	agentSummaryIcons: true,
@@ -361,6 +374,7 @@ export function normalizeConfig(input: unknown): Config {
 			FOOTER_GIT_STATS_MODES,
 			DEFAULT_CONFIG.footerGitStatsMode,
 		),
+		tokenSpeed: normalizeTokenSpeed(source.tokenSpeed),
 		...normalizeFooterChipLayout(source),
 		agentSummaryKeys: normalizeAgentSummaryKeys(source.agentSummaryKeys),
 		agentSummarySep:
@@ -492,6 +506,7 @@ export function formatConfigStatus(source: Config = config): string {
 		`agentSummaryMinTools=${source.agentSummaryMinTools}`,
 		`agentSummaryDoneDate=${source.agentSummaryDoneDate ? "on" : "off"}`,
 		`agentSummaryItalic=${source.agentSummaryItalic ? "on" : "off"}`,
+		formatTokenSpeedSummary(source.tokenSpeed),
 		formatFooterChipSummary(source),
 	].join(" · ");
 }

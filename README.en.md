@@ -94,6 +94,23 @@ Renderer snapshots for `on` / `compact` modes: [default](./docs/tool-render-exam
   "footerLine2Keys": [],       // cwd: directory and session; git: branch and changes. Either can move to any line
   "footerLine3Keys": [],                   // painted only when a chip is visible
 
+  // tokenSpeed (output rate tiers, from pi-token-speed; P1 config only, not wired into the chip yet)
+  "tokenSpeed": {
+    "thresholds": { "slow": 0, "medium": 15, "fast": 30, "blazing": 45 }, // four tiers (tok/s), non-negative strictly ascending integers; invalid block falls back to defaults
+    "colors": {
+      "slow": "#ff4444",                     // tier colors (slow/medium/fast/blazing); one invalid color falls back for that tier only
+      "medium": "#ffaa00",
+      "fast": "#00ff88",
+      "blazing": "#44ddff"
+    },
+    "icon": "",                              // empty = follow footerNerdIcons default; can be ⚡/🔥/🚀 etc.
+    "countStrategy": "estimate",             // estimate (chars/4, CJK counts 1 per char) / direct (1 delta=1 token, CJK distortion is on you)
+    "endTpsBehavior": "average",             // average: freeze to the whole-run average / last: freeze to the last window value
+    "slidingWindow": 1000,                   // live sliding window in ms, range 100..30000 (30s hard cap)
+    "updateInterval": 0,                     // render throttle in ms, range 0..1000; 0 = refresh on every delta
+    "formatDuration": false                  // duration formatting: 92.3s → 1m 32.3s
+  }
+
   // agent-summary (turn summary line)
   "agentSummaryKeys": ["duration", "tokens", "rate", "cache-hit", "turns", "tools", "done"], // segment order; options: duration/tokens/cache/cache-hit/rate/reasoning/turns/model/tools/cost/failed/done
   "agentSummarySep": " · ",                // segment separator
