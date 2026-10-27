@@ -149,6 +149,7 @@ export const DEFAULT_AGENT_SUMMARY_KEYS = [
 	"tokens",
 	"cache",
 	"cache-hit",
+	"rate",
 	"tools",
 	"cost",
 	"failed",

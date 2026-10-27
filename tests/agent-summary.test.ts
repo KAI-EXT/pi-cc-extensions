@@ -86,6 +86,7 @@ test("AgentRunSummary：计数去重；usage/缓存/思考/轮数/模型累计",
 		cost: 0.005,
 		turns: 4,
 		model: "glm-5.3-flash",
+		tokensPerSec: 0,
 	} satisfies AgentSummaryData);
 });
 
@@ -106,20 +107,21 @@ test("summaryMarkdown：emoji 分段风（默认段序）", () => {
 		cost: 0.05,
 		turns: 4,
 		model: "",
+		tokensPerSec: 42,
 	};
 	// 默认 keys 含 cache；cache/reasoning 等未收集到时自动省略
 	assert.equal(
 		summaryMarkdown(data),
-		"> *⚡ 42s · ↑12.4k ↓3.1k tok · ↗45k ↘210k cache · hit 78% · 🔧 bash×3 edit×1 read×2 write×1 · 💰 $0.05*",
+		"> *⚡ 42s · ↑12.4k ↓3.1k tok · ↗45k ↘210k cache · hit 78% · avg 42 tok/s · 🔧 bash×3 edit×1 read×2 write×1 · 💰 $0.05*",
 	);
 	// keys 重排 + turns/model/reasoning
 	assert.equal(
 		summaryMarkdown(
 			{ ...data, reasoning: 1800, model: "glm-5.3-flash" },
 			{ success: "", failed: "" },
-			{ keys: ["model", "tokens", "reasoning", "turns", "cache-hit", "duration"], cacheIcon: "󰆼" },
+			{ keys: ["model", "rate", "tokens", "reasoning", "turns", "cache-hit", "duration"], cacheIcon: "󰆼" },
 		),
-		"> *🤖 glm-5.3-flash · ↑12.4k ↓3.1k tok · 🧠 1.8k · 🔁4 · 󰆼 78% · ⚡ 42s*",
+		"> *🤖 glm-5.3-flash · avg 42 tok/s · ↑12.4k ↓3.1k tok · 🧠 1.8k · 🔁4 · 󰆼 78% · ⚡ 42s*",
 	);
 	// icons=false：纯文本
 	assert.equal(
@@ -155,6 +157,7 @@ test("summaryMarkdown：emoji 分段风（默认段序）", () => {
 			cost: 0,
 			turns: 0,
 			model: "",
+			tokensPerSec: 0,
 		}),
 		"",
 	);
@@ -221,6 +224,7 @@ test("bindAgentSummary：agent_start 重置、turn_end 累计 usage、minTools �
 		cost: 0.001,
 		turns: 2,
 		model: "",
+		tokensPerSec: 0,
 	});
 });
 

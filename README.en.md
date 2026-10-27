@@ -95,7 +95,7 @@ Renderer snapshots for `on` / `compact` modes: [default](./docs/tool-render-exam
   "footerLine3Keys": [],                   // painted only when a chip is visible
 
   // agent-summary (turn summary line)
-  "agentSummaryKeys": ["duration", "tokens", "cache", "cache-hit", "tools", "cost", "failed"], // segment order; options: duration/tokens/cache/reasoning/turns/model/tools/cost/failed
+  "agentSummaryKeys": ["duration", "tokens", "cache", "cache-hit", "rate", "tools", "cost", "failed"], // segment order; options: duration/tokens/cache/reasoning/turns/model/tools/cost/failed
   "agentSummarySep": " · ",                // segment separator
   "agentSummaryIcons": true,               // emoji icons; false = plain text
   "agentSummaryMinTools": 0                // min tool calls before showing; 0 = show whenever there is content, 2 = legacy behavior
@@ -115,6 +115,7 @@ The turn summary line renders segments in `agentSummaryKeys` order; segments wit
 | `reasoning` | `🧠 1.8k` | Reasoning tokens (subset of `output`) | provider reports none |
 | `turns` | `🔁4` | Model request count | 0 turns |
 | `model` | `🤖 glm-5.3-flash` | Model of the last turn | — |
+| `rate` | `avg 42 tok/s` | Average output rate, same source as the footer rate chip; frozen at `agent_end` so replays stay stable | no rate data |
 | `tools` | `🔧 bash×19 edit×6 read×4` | bash counts calls; read/edit/write dedupe by file; rest are `other×N` | no tool calls |
 | `cost` | `💰 $0.05` | Accumulated turn cost | model has no pricing |
 | `failed` | `✗1` | Failed tool calls | 0 failures |
@@ -122,7 +123,7 @@ The turn summary line renders segments in `agentSummaryKeys` order; segments wit
 Example (`agentSummaryIcons: false` drops the emoji prefixes):
 
 ```
-│ ⚡ 9m55s · ↑12.4k ↓3.1k tok · ↗45k ↘210k cache · 󰆼 78% · 🔧 bash×19 edit×6 · 💰 $0.05 · ✗1
+│ ⚡ 9m55s · ↑12.4k ↓3.1k tok · ↗45k ↘210k cache · 󰆼 78% · avg 42 tok/s · 🔧 bash×19 edit×6 · 💰 $0.05 · ✗1
 ```
 
 `agentSummaryMinTools` gates the whole line: `0` (default) shows whenever the turn had tool calls or token output; set `2` for the legacy behavior (≥ 2 tool calls).

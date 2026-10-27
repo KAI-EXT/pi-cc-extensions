@@ -15,6 +15,7 @@ import { getMarkdownTheme } from "@earendil-works/pi-coding-agent";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { config, getAgentSummaryConfig } from "../../config/config.ts";
 import { footerGlyphs } from "../shell/footer.ts";
+import { currentTokenRate } from "../shell/token-rate.ts";
 import { bindAgentSummary, summaryMarkdown, type AgentSummaryData } from "./core.ts";
 
 export const AGENT_SUMMARY_ENTRY_TYPE = "agent-summary";
@@ -41,6 +42,6 @@ export default function (pi: ExtensionAPI): void {
 		(data) => {
 			pi.appendEntry(AGENT_SUMMARY_ENTRY_TYPE, data);
 		},
-		{ minTools },
+		{ minTools, getRate: () => currentTokenRate() },
 	);
 }

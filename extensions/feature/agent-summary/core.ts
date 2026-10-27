@@ -9,6 +9,7 @@
  */
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { formatTokenRate } from "../shell/token-rate.ts";
 import { formatDuration } from "../../utils/format.ts";
 
 /** 工具分类。 */
@@ -37,6 +38,8 @@ export type AgentSummaryData = {
 	turns: number;
 	/** 最后一轮使用的模型 id。 */
 	model: string;
+	/** 整段指令平均输出速率（tok/s，与 footer 同源），agent_end 时定格。 */
+	tokensPerSec: number;
 };
 
 export function classifyTool(toolName: string): AgentToolCategory {
@@ -163,6 +166,7 @@ export class AgentRunSummary {
 			cost: this.cost,
 			turns: this.turns,
 			model: this.model,
+			tokensPerSec: 0,
 		};
 	}
 }
@@ -238,6 +242,13 @@ function summaryParts(data: AgentSummaryData, options: AgentSummaryViewConfig): 
 			case "failed":
 				if (data.failed) parts.push(`✗${data.failed}`);
 				break;
+			case "rate": {
+				// 与 footer 同源的整段平均输出速率（agent_end 时定格）。
+				if (data.tokensPerSec > 0) {
+					parts.push(formatTokenRate(data.tokensPerSec, 0, "average", false));
+				}
+				break;
+			}
 			case "model":
 				if (data.model) parts.push(icons ? `🤖 ${data.model}` : data.model);
 				break;
@@ -246,7 +257,16 @@ function summaryParts(data: AgentSummaryData, options: AgentSummaryViewConfig): 
 	return parts;
 }
 
-const DEFAULT_SUMMARY_KEYS = ["duration", "tokens", "cache", "cache-hit", "tools", "cost", "failed"];
+const DEFAULT_SUMMARY_KEYS = [
+	"duration",
+	"tokens",
+	"cache",
+	"cache-hit",
+	"rate",
+	"tools",
+	"cost",
+	"failed",
+];
 
 export function summaryMarkdown(
 	data: AgentSummaryData,
@@ -270,12 +290,12 @@ export function summaryMarkdown(
  * - agent_start 重置
  * - tool_execution_start / end 累计
  * - turn_end 累加该轮 assistant 消息的 usage（token/缓存/成本）与轮数、模型
- * - agent_end 回调（minTools=0 时无工具但有输出也显示）
+ * - agent_end 回调（minTools=0 时无工具但有输出也显示）；速率由 getRate 注入定格
  */
 export function bindAgentSummary(
 	pi: ExtensionAPI,
 	onSummary: (data: AgentSummaryData) => void,
-	options: { minTools?: number } = {},
+	options: { minTools?: number; getRate?: () => number } = {},
 ): void {
 	const minTools = options.minTools ?? 0;
 	let summary = new AgentRunSummary();
@@ -297,6 +317,11 @@ export function bindAgentSummary(
 	pi.on("agent_end", async () => {
 		const meetsMin = summary.toolCount >= minTools;
 		const hasContent = minTools > 0 || summary.toolCount > 0 || summary.outputTokens > 0;
-		if (meetsMin && hasContent) onSummary(summary.snapshot());
+		if (meetsMin && hasContent) {
+			const snap = summary.snapshot();
+			// 定格速率存进条目：持久化条目重渲染时不依赖全局状态。
+			snap.tokensPerSec = options.getRate?.() ?? 0;
+			onSummary(snap);
+		}
 	});
 }
