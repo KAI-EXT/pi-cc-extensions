@@ -95,6 +95,7 @@ pi install git:github.com/minuque/pi-cc-extensions
   "footerLine3Keys": [],                   // 有可见芯片才占行
 
   // tokenSpeed（输出速率分级，源自 pi-token-speed）：footer 速率芯片与摘要行 rate 段按四档色着色
+  // 注意：速率芯片是否显示由 footerLine*Keys 决定——需在其中包含 "rate"。
   "tokenSpeed": {
     "thresholds": { "slow": 0, "medium": 15, "fast": 30, "blazing": 45 }, // 四档阈值（tok/s），须非负整数且严格升序；非法整块回落默认
     "colors": {

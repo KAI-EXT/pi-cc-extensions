@@ -95,6 +95,7 @@ Renderer snapshots for `on` / `compact` modes: [default](./docs/tool-render-exam
   "footerLine3Keys": [],                   // painted only when a chip is visible
 
   // tokenSpeed (output rate tiers, from pi-token-speed): the footer rate chip and the summary line's rate segment are tier-colored
+  // Note: the rate chip renders only if "rate" is listed in footerLine*Keys.
   "tokenSpeed": {
     "thresholds": { "slow": 0, "medium": 15, "fast": 30, "blazing": 45 }, // four tiers (tok/s), non-negative strictly ascending integers; invalid block falls back to defaults
     "colors": {
