@@ -151,12 +151,10 @@ export const EXCLUDE_RENDERER_CANDIDATES = [
 export const DEFAULT_AGENT_SUMMARY_KEYS = [
 	"duration",
 	"tokens",
-	"cache",
-	"cache-hit",
 	"rate",
+	"cache-hit",
+	"turns",
 	"tools",
-	"cost",
-	"failed",
 	"done",
 ];
 /** agent-summary 支持的段 key；未知 key 在 normalize 时丢弃。 */
@@ -206,7 +204,7 @@ export const DEFAULT_CONFIG: Config = {
 	agentSummarySep: " · ",
 	agentSummaryIcons: true,
 	agentSummaryMinTools: 0,
-	agentSummaryDoneDate: false,
+	agentSummaryDoneDate: true,
 	agentSummaryItalic: false,
 	...DEFAULT_FOOTER_CHIP_LAYOUT,
 };

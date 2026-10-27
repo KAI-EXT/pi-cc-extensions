@@ -19,9 +19,14 @@ function stripAnsi(text: string): string {
 }
 
 /** 与 core.ts 的 done 段同一格式化，避免测试断言耦合时区。 */
-function doneLabel(ts: number): string {
+function doneLabel(ts: number, withDate = true): string {
 	const d = new Date(ts);
-	return `done ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+	const hh = String(d.getHours()).padStart(2, "0");
+	const mi = String(d.getMinutes()).padStart(2, "0");
+	if (!withDate) return `done ${hh}:${mi}`;
+	const mm = String(d.getMonth() + 1).padStart(2, "0");
+	const dd = String(d.getDate()).padStart(2, "0");
+	return `done ${mm}-${dd} ${hh}:${mi}`;
 }
 
 test("classifyTool：bash/read/edit/write/other", () => {
@@ -120,7 +125,7 @@ test("summaryMarkdown：emoji 分段风（默认段序）", () => {
 	// 默认 keys 含 cache；cache/reasoning 等未收集到时自动省略
 	assert.equal(
 		summaryMarkdown(data),
-		`> ⚡ 42s · ↑12.4k ↓3.1k tok · ↗45k ↘210k cache · hit 78% · avg 42 tok/s · ⛏ bash×3 edit×1 read×2 write×1 · 💰 $0.05 · ${doneLabel(42_000)}`,
+		`> ⚡ 42s · ↑12.4k ↓3.1k tok · avg 42 tok/s · hit 78% · 󰑓 4 · ⛏ bash×3 edit×1 read×2 write×1 · ${doneLabel(42_000, false)}`,
 	);
 	// keys 重排 + turns/model/reasoning
 	assert.equal(
@@ -156,7 +161,10 @@ test("summaryMarkdown：emoji 分段风（默认段序）", () => {
 		"> ⚡ 42s | 💰 $0.05",
 	);
 	// 有失败：追加 ✗N
-	assert.match(summaryMarkdown({ ...data, failed: 2 }), /· ✗2 · done \d{2}:\d{2}$/);
+	assert.match(
+		summaryMarkdown({ ...data, failed: 2 }, { success: "", failed: "" }, { keys: ["failed", "done"] }),
+		/✗2 · done \d{2}:\d{2}$/,
+	);
 	// 全空：不渲染
 	assert.equal(
 		summaryMarkdown({

@@ -282,12 +282,10 @@ function summaryParts(data: AgentSummaryData, options: AgentSummaryViewConfig): 
 const DEFAULT_SUMMARY_KEYS = [
 	"duration",
 	"tokens",
-	"cache",
-	"cache-hit",
 	"rate",
+	"cache-hit",
+	"turns",
 	"tools",
-	"cost",
-	"failed",
 	"done",
 ];
 
