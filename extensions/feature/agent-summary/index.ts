@@ -10,10 +10,11 @@
  * 引用块文字色取主题 mdQuote（cc 主题下为 muted 灰），内容用 *斜体* 语法。
  */
 
-import { Markdown } from "@earendil-works/pi-tui";
+	import { Markdown } from "@earendil-works/pi-tui";
 import { getMarkdownTheme } from "@earendil-works/pi-coding-agent";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { config, getAgentSummaryConfig } from "../../config/config.ts";
+import { footerGlyphs } from "../shell/footer.ts";
 import { bindAgentSummary, summaryMarkdown, type AgentSummaryData } from "./core.ts";
 
 export const AGENT_SUMMARY_ENTRY_TYPE = "agent-summary";
@@ -28,7 +29,7 @@ export default function (pi: ExtensionAPI): void {
 				success: theme.getFgAnsi("success"),
 				failed: theme.getFgAnsi("error"),
 			},
-			{ keys, sep, icons },
+			{ keys, sep, icons, cacheIcon: footerGlyphs(config.footerNerdIcons).cache },
 		);
 		if (!line) return undefined;
 		return new Markdown(line, 1, 0, getMarkdownTheme());

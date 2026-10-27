@@ -73,6 +73,8 @@ export interface AgentSummaryViewConfig {
 	keys?: readonly string[];
 	sep?: string;
 	icons?: boolean;
+	/** cache-hit 段的 Nerd Font 图标（由调用方按 footerNerdIcons 解析）；空串回退 `hit N%` 文本。 */
+	cacheIcon?: string;
 }
 
 /** 从全局 config 取出的完整摘要配置（含显示阈值）。 */
@@ -194,14 +196,19 @@ function summaryParts(data: AgentSummaryData, options: AgentSummaryViewConfig): 
 					parts.push(`↑${formatTokens(data.inputTokens)} ↓${formatTokens(data.outputTokens)} tok`);
 				}
 				break;
-			case "cache": {
-				// ↗ = 写入缓存（上传），↘ = 缓存命中（下载使用）；命中率与 footer 同算法（回合累计值）
+			case "cache":
+				// ↗ = 写入缓存（上传），↘ = 缓存命中（下载使用）
 				if (data.cacheRead || data.cacheWrite) {
-					let label = `↗${formatTokens(data.cacheWrite)} ↘${formatTokens(data.cacheRead)} cache`;
-					const denom = data.inputTokens + data.cacheWrite + data.cacheRead;
-					if (denom > 0) label += ` ${Math.floor((data.cacheRead * 100) / denom)}%`;
-					parts.push(label);
+					parts.push(`↗${formatTokens(data.cacheWrite)} ↘${formatTokens(data.cacheRead)} cache`);
 				}
+				break;
+			case "cache-hit": {
+				// 命中率与 footer 芯片同算法：cacheRead / (input + cacheWrite + cacheRead)，回合累计值
+				const denom = data.inputTokens + data.cacheWrite + data.cacheRead;
+				if (!denom) break;
+				const pct = `${Math.floor((data.cacheRead * 100) / denom)}%`;
+				const glyph = icons ? (options.cacheIcon ?? "") : "";
+				parts.push(glyph ? `${glyph} ${pct}` : `hit ${pct}`);
 				break;
 			}
 			case "reasoning":
@@ -239,7 +246,7 @@ function summaryParts(data: AgentSummaryData, options: AgentSummaryViewConfig): 
 	return parts;
 }
 
-const DEFAULT_SUMMARY_KEYS = ["duration", "tokens", "cache", "tools", "cost", "failed"];
+const DEFAULT_SUMMARY_KEYS = ["duration", "tokens", "cache", "cache-hit", "tools", "cost", "failed"];
 
 export function summaryMarkdown(
 	data: AgentSummaryData,

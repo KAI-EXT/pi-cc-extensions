@@ -110,25 +110,25 @@ test("summaryMarkdown：emoji 分段风（默认段序）", () => {
 	// 默认 keys 含 cache；cache/reasoning 等未收集到时自动省略
 	assert.equal(
 		summaryMarkdown(data),
-		"> *⚡ 42s · ↑12.4k ↓3.1k tok · ↗45k ↘210k cache 78% · 🔧 bash×3 edit×1 read×2 write×1 · 💰 $0.05*",
+		"> *⚡ 42s · ↑12.4k ↓3.1k tok · ↗45k ↘210k cache · hit 78% · 🔧 bash×3 edit×1 read×2 write×1 · 💰 $0.05*",
 	);
 	// keys 重排 + turns/model/reasoning
 	assert.equal(
 		summaryMarkdown(
 			{ ...data, reasoning: 1800, model: "glm-5.3-flash" },
 			{ success: "", failed: "" },
-			{ keys: ["model", "tokens", "reasoning", "turns", "duration"] },
+			{ keys: ["model", "tokens", "reasoning", "turns", "cache-hit", "duration"], cacheIcon: "󰆼" },
 		),
-		"> *🤖 glm-5.3-flash · ↑12.4k ↓3.1k tok · 🧠 1.8k · 🔁4 · ⚡ 42s*",
+		"> *🤖 glm-5.3-flash · ↑12.4k ↓3.1k tok · 🧠 1.8k · 🔁4 · 󰆼 78% · ⚡ 42s*",
 	);
 	// icons=false：纯文本
 	assert.equal(
 		summaryMarkdown(
 			data,
 			{ success: "", failed: "" },
-			{ icons: false, keys: ["duration", "tokens", "tools", "cost"] },
+			{ icons: false, keys: ["duration", "tokens", "cache-hit", "tools", "cost"] },
 		),
-		"> *42s · ↑12.4k ↓3.1k tok · bash×3 edit×1 read×2 write×1 · $0.05*",
+		"> *42s · ↑12.4k ↓3.1k tok · hit 78% · bash×3 edit×1 read×2 write×1 · $0.05*",
 	);
 	// 自定义分隔符
 	assert.equal(
