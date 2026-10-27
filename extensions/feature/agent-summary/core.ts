@@ -5,7 +5,7 @@
  * 计数：bash/powershell 按调用次数；read/edit/write 按非空 path/file_path 去重；other 按调用次数。
  * 失败单独累计；另记回合耗时。
  *
- * 呈现：`summaryLine` 纯文本，`summaryMarkdown` Markdown（可 box 引用块）。
+ * 呈现：`summaryLine` 纯文本，`summaryMarkdown` Markdown 引用块（无斜体）。
  */
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
@@ -303,7 +303,7 @@ export function summaryMarkdown(
 		return part.replace(/(\d+(?:\.\d+)?k?)/, `${code}$1\x1b[0m`);
 	};
 	const line = parts.map(paintPart).join(options.sep ?? " · ");
-	return `> *${line}*`;
+	return `> ${line}`;
 }
 
 /**

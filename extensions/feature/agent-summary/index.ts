@@ -7,7 +7,7 @@
  * `agentSummaryKeys` / `agentSummarySep` / `agentSummaryIcons` / `agentSummaryMinTools` 控制。
  *
  * appendEntry 不进 LLM 上下文，只显示在聊天区。
- * 引用块文字色取主题 mdQuote（cc 主题下为 muted 灰），内容用 *斜体* 语法。
+ * 引用块文字色取主题 mdQuote（cc 主题下为 muted 灰）。
  */
 
 	import { Markdown } from "@earendil-works/pi-tui";
