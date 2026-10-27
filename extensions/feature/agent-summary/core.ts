@@ -227,7 +227,7 @@ function summaryParts(data: AgentSummaryData, options: AgentSummaryViewConfig): 
 					);
 				break;
 			case "turns":
-				if (data.turns) parts.push(icons ? `🔁${data.turns}` : `${data.turns} turns`);
+				if (data.turns) parts.push(icons ? `󰑓 ${data.turns}` : `${data.turns} turns`);
 				break;
 			case "tools": {
 				const tools: string[] = [];
@@ -236,7 +236,7 @@ function summaryParts(data: AgentSummaryData, options: AgentSummaryViewConfig): 
 				if (data.reads) tools.push(`read×${data.reads}`);
 				if (data.writes) tools.push(`write×${data.writes}`);
 				if (data.others) tools.push(`other×${data.others}`);
-				if (tools.length) parts.push(icons ? `🔧 ${tools.join(" ")}` : tools.join(" "));
+				if (tools.length) parts.push(icons ? `⛏ ${tools.join(" ")}` : tools.join(" "));
 				break;
 			}
 			case "cost": {

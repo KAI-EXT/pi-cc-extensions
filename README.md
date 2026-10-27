@@ -113,10 +113,10 @@ pi install git:github.com/minuque/pi-cc-extensions
 | `cache` | `↗45k ↘210k cache` | 缓存流量：↗ 写入（上传）、↘ 命中读取（下载） | provider 未上报缓存 |
 | `cache-hit` | `󰆼 78%` | 缓存命中率 = 命中 ÷（输入 + 写入 + 命中），回合累计值；与 footer 缓存芯片同图标同算法，`footerNerdIcons: false` 时显示为 `hit 78%` | 无缓存数据 |
 | `reasoning` | `🧠 1.8k` | 思考 token（`output` 的子集） | provider 未上报 |
-| `turns` | `🔁4` | 模型请求轮数 | 0 轮 |
+| `turns` | `󰑓 4` | 模型请求轮数 | 0 轮 |
 | `model` | `🤖 glm-5.3-flash` | 最后一轮使用的模型 | — |
 | `rate` | `avg 42 tok/s` | 整段平均输出速率，与 footer 速率芯片同源；`agent_end` 时定格，会话重放不漂移 | 无速率数据 |
-| `tools` | `🔧 bash×19 edit×6 read×4` | bash 按调用计，read/edit/write 按文件去重，其余归 `other×N` | 无工具调用 |
+| `tools` | `⛏ bash×19 edit×6 read×4` | bash 按调用计，read/edit/write 按文件去重，其余归 `other×N` | 无工具调用 |
 | `cost` | `💰 $0.05` | 本回合累计成本 | 模型未配置单价 |
 | `failed` | `✗1` | 失败的工具调用数 | 0 次失败 |
 | `done` | `done 19:24` | 回合结束时刻（本地时区 HH:MM） | — |
@@ -124,7 +124,7 @@ pi install git:github.com/minuque/pi-cc-extensions
 示例（`agentSummaryIcons: false` 为纯文本模式，emoji 前缀消失）：
 
 ```
-│ ⚡ 9m55s · ↑12.4k ↓3.1k tok · ↗45k ↘210k cache · 󰆼 78% · avg 42 tok/s · 🔧 bash×19 edit×6 · 💰 $0.05 · ✗1 · done 19:24
+│ ⚡ 9m55s · ↑12.4k ↓3.1k tok · ↗45k ↘210k cache · 󰆼 78% · avg 42 tok/s · ⛏ bash×19 edit×6 · 💰 $0.05 · ✗1 · done 19:24
 ```
 
 `agentSummaryMinTools` 控制整行是否出现：`0`（默认）只要回合有工具调用或 token 输出就显示；设为 `2` 恢复旧行为（工具数 ≥ 2 才显示）。
