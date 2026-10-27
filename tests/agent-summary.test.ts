@@ -145,6 +145,11 @@ test("summaryMarkdown：emoji 分段风（默认段序）", () => {
 		summaryMarkdown(data, { success: "", failed: "" }, { keys: ["done"], doneDate: true }),
 		/> done \d{2}-\d{2} \d{2}:\d{2}$/,
 	);
+	// italic: true → 恢复整行斜体
+	assert.equal(
+		summaryMarkdown(data, { success: "", failed: "" }, { keys: ["duration", "cost"], italic: true }),
+		"> *⚡ 42s · 💰 $0.05*",
+	);
 	// 自定义分隔符
 	assert.equal(
 		summaryMarkdown(data, { success: "", failed: "" }, { keys: ["duration", "cost"], sep: " | " }),

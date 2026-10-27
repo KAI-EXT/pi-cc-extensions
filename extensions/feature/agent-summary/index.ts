@@ -23,14 +23,14 @@ export const AGENT_SUMMARY_ENTRY_TYPE = "agent-summary";
 export default function (pi: ExtensionAPI): void {
 	pi.registerEntryRenderer(AGENT_SUMMARY_ENTRY_TYPE, (entry, _options, theme) => {
 		// 渲染时读配置：/ccstyle 面板或配置文件改完立即生效。
-		const { keys, sep, icons, doneDate } = getAgentSummaryConfig(config);
+		const { keys, sep, icons, doneDate, italic } = getAgentSummaryConfig(config);
 		const line = summaryMarkdown(
 			entry.data as AgentSummaryData,
 			{
 				success: theme.getFgAnsi("success"),
 				failed: theme.getFgAnsi("error"),
 			},
-			{ keys, sep, icons, doneDate, cacheIcon: footerGlyphs(config.footerNerdIcons).cache },
+			{ keys, sep, icons, doneDate, italic, cacheIcon: footerGlyphs(config.footerNerdIcons).cache },
 		);
 		if (!line) return undefined;
 		return new Markdown(line, 1, 0, getMarkdownTheme());

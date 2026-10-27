@@ -82,6 +82,8 @@ export interface AgentSummaryViewConfig {
 	cacheIcon?: string;
 	/** done 段是否带日期（`done 03-12 19:24`）；false 只显示 `done 19:24`。 */
 	doneDate?: boolean;
+	/** 整行斜体（markdown *…*）；false 直体。 */
+	italic?: boolean;
 }
 
 /** 从全局 config 取出的完整摘要配置（含显示阈值）。 */
@@ -303,7 +305,7 @@ export function summaryMarkdown(
 		return part.replace(/(\d+(?:\.\d+)?k?)/, `${code}$1\x1b[0m`);
 	};
 	const line = parts.map(paintPart).join(options.sep ?? " · ");
-	return `> ${line}`;
+	return options.italic ? `> *${line}*` : `> ${line}`;
 }
 
 /**

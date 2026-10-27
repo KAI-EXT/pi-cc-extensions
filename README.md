@@ -98,7 +98,9 @@ pi install git:github.com/minuque/pi-cc-extensions
   "agentSummaryKeys": ["duration", "tokens", "cache", "cache-hit", "rate", "tools", "cost", "failed", "done"], // 段顺序与开关；可选：duration/tokens/cache/cache-hit/rate/reasoning/turns/model/tools/cost/failed/done
   "agentSummarySep": " · ",                // 段分隔符
   "agentSummaryIcons": true,               // emoji 图标；false 为纯文本
-  "agentSummaryMinTools": 0                // 触发显示的最小工具数；0 = 有任意内容就显示，2 = 恢复旧行为
+  "agentSummaryMinTools": 0,               // 触发显示的最小工具数；0 = 有任意内容就显示，2 = 恢复旧行为
+  "agentSummaryDoneDate": false            // done 段是否带日期：true = "done 03-12 19:24"，false = "done 19:24"
+  "agentSummaryItalic": false              // 整行斜体（Claude Code 原版样式）；false 直体
 }
 ```
 

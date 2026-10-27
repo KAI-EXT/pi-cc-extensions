@@ -106,6 +106,8 @@ export type Config = {
 	agentSummaryMinTools: number;
 	/** agent-summary done 段是否带日期。 */
 	agentSummaryDoneDate: boolean;
+	/** agent-summary 整行斜体。 */
+	agentSummaryItalic: boolean;
 };
 
 const AGENT_DIR = process.env.PI_CODING_AGENT_DIR ?? join(homedir(), ".pi", "agent");
@@ -205,6 +207,7 @@ export const DEFAULT_CONFIG: Config = {
 	agentSummaryIcons: true,
 	agentSummaryMinTools: 0,
 	agentSummaryDoneDate: false,
+	agentSummaryItalic: false,
 	...DEFAULT_FOOTER_CHIP_LAYOUT,
 };
 
@@ -374,6 +377,7 @@ export function normalizeConfig(input: unknown): Config {
 			100,
 		),
 		agentSummaryDoneDate: source.agentSummaryDoneDate === true,
+		agentSummaryItalic: source.agentSummaryItalic === true,
 	};
 }
 
@@ -392,6 +396,7 @@ export function getAgentSummaryConfig(source: Config = config): AgentSummaryFeat
 		icons: source.agentSummaryIcons,
 		minTools: source.agentSummaryMinTools,
 		doneDate: source.agentSummaryDoneDate,
+		italic: source.agentSummaryItalic,
 	};
 }
 
@@ -488,6 +493,7 @@ export function formatConfigStatus(source: Config = config): string {
 		`agentSummaryIcons=${source.agentSummaryIcons ? "on" : "off"}`,
 		`agentSummaryMinTools=${source.agentSummaryMinTools}`,
 		`agentSummaryDoneDate=${source.agentSummaryDoneDate ? "on" : "off"}`,
+		`agentSummaryItalic=${source.agentSummaryItalic ? "on" : "off"}`,
 		formatFooterChipSummary(source),
 	].join(" · ");
 }
