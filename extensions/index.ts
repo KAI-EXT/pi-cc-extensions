@@ -5,6 +5,7 @@ import { config } from "./config/config.ts";
 import piAliases from "./feature/shell/aliases.ts";
 import { installFlushDockedBash } from "./feature/shell/flush-docked-bash.ts";
 import customFooter from "./feature/shell/footer.ts";
+import { setTokenSpeedOptions } from "./feature/shell/token-rate.ts";
 import { applyPromptEditor } from "./feature/shell/prompt-editor.ts";
 import piStartupHeader, { installEarlyStartupHeader } from "./feature/shell/startup-header.ts";
 import workingMessage from "./feature/shell/working-message.ts";
@@ -21,6 +22,8 @@ import claudeCodeStyle, { getCompactThinkingConfig } from "./renderer/index.ts";
 import markdownEnhance from "./renderer/markdown-enhance.ts";
 
 export default function (pi: ExtensionAPI): void {
+	// tokenSpeed 口径进引擎：缺省 estimate/average/1000，行为与既往一致。
+	setTokenSpeedOptions(config.tokenSpeed);
 	// shell chrome
 	if (config.enableAliases) piAliases(pi);
 	installFlushDockedBash();
