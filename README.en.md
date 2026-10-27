@@ -90,7 +90,7 @@ Renderer snapshots for `on` / `compact` modes: [default](./docs/tool-render-exam
   "footerNerdIcons": true,                 // Nerd Font glyphs for git/cache; false = plain text
   "footerGitStatsMode": "working",         // working (default): uncommitted; branch: cumulative net changes
   "footerHiddenKeys": [],                  // hidden chip keys
-  "footerLine1Keys": ["cwd", "pi-usage", "git", "model", "context", "cache"], // chip order per line; builtins and plugins share one layout
+  "footerLine1Keys": ["cwd", "pi-usage", "git", "model", "context", "cache", "rate"], // chip order per line; builtins and plugins share one layout
   "footerLine2Keys": [],       // cwd: directory and session; git: branch and changes. Either can move to any line
   "footerLine3Keys": [],                   // painted only when a chip is visible
 

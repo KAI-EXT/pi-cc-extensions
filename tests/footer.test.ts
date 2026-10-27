@@ -139,6 +139,7 @@ test("normalizeConfig keeps explicit empty hiddenKeys and inserts builtins aroun
 		FOOTER_MODEL_KEY,
 		FOOTER_CONTEXT_KEY,
 		FOOTER_CACHE_KEY,
+		FOOTER_RATE_KEY,
 		PI_USAGE_KEY,
 	]);
 	assert.deepEqual(next.footerLine2Keys, []);
@@ -156,6 +157,7 @@ test("normalizeFooterChipLayout migrates old plugin-only lines and keeps an expl
 		FOOTER_MODEL_KEY,
 		FOOTER_CONTEXT_KEY,
 		FOOTER_CACHE_KEY,
+		FOOTER_RATE_KEY,
 		"usage",
 		"ponytail",
 	]);
@@ -183,6 +185,7 @@ test("normalizeFooterChipLayout rewrites legacy localUsage and piUsage keys to p
 		FOOTER_MODEL_KEY,
 		FOOTER_CONTEXT_KEY,
 		FOOTER_CACHE_KEY,
+		FOOTER_RATE_KEY,
 		PI_USAGE_KEY,
 		"usage",
 	]);
@@ -197,6 +200,7 @@ test("normalizeFooterChipLayout rewrites legacy localUsage and piUsage keys to p
 		FOOTER_MODEL_KEY,
 		FOOTER_CONTEXT_KEY,
 		FOOTER_CACHE_KEY,
+		FOOTER_RATE_KEY,
 		PI_USAGE_KEY,
 	]);
 	assert.deepEqual(fromCamel.footerLine2Keys, []);

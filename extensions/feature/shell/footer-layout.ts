@@ -16,7 +16,7 @@ export const FOOTER_COST_KEY = "cost";
 export const FOOTER_CWD_KEY = "cwd";
 export const FOOTER_GIT_KEY = "git";
 
-/** 默认第一行：cwd/pi-usage/git 在左，model/context/cache 在右。 */
+/** 默认第一行：cwd/pi-usage/git 在左，model/context/cache/rate 在右。 */
 export const DEFAULT_FOOTER_LINE1_KEYS = [
 	FOOTER_CWD_KEY,
 	PI_USAGE_KEY,
@@ -24,6 +24,7 @@ export const DEFAULT_FOOTER_LINE1_KEYS = [
 	FOOTER_MODEL_KEY,
 	FOOTER_CONTEXT_KEY,
 	FOOTER_CACHE_KEY,
+	FOOTER_RATE_KEY,
 ] as const;
 
 /** 默认第二行：空（全部芯片已在第一行）。 */

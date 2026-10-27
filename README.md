@@ -90,7 +90,7 @@ pi install git:github.com/minuque/pi-cc-extensions
   "footerNerdIcons": true,                 // git/缓存用 Nerd Font 图标；false 为纯文本
   "footerGitStatsMode": "working",         // working（默认）：未提交改动；branch：分支累计净改动
   "footerHiddenKeys": [],                  // 隐藏的芯片 key
-  "footerLine1Keys": ["cwd", "pi-usage", "git", "model", "context", "cache"], // 每行芯片顺序；内置项与插件同一套排布
+  "footerLine1Keys": ["cwd", "pi-usage", "git", "model", "context", "cache", "rate"], // 每行芯片顺序；内置项与插件同一套排布
   "footerLine2Keys": [],                   // cwd：目录和会话名；git：分支和改动。可换到任意行
   "footerLine3Keys": [],                   // 有可见芯片才占行
 
