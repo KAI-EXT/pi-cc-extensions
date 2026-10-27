@@ -104,9 +104,9 @@ test("Token speed icon 行 none 与图标互转（none ↔ 空串）", async () 
 	sendTabs(panel, 5);
 	rowNav(panel, FOOTER_ROWS)(5); // Token speed icon
 	panel.handleInput(" ");
-	assert.equal(config.tokenSpeed.icon, "⚡");
+	assert.equal(config.tokenSpeed.icon, "🔥");
 	// 循环完 🚀 回到 none，配置回空串
-	for (let i = 0; i < 4; i++) panel.handleInput(" ");
+	for (let i = 0; i < 3; i++) panel.handleInput(" ");
 	assert.equal(config.tokenSpeed.icon, "");
 	panel.handleInput("\x1b");
 	await close;

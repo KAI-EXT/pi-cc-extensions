@@ -40,7 +40,7 @@ export interface TokenSpeedDisplayColors {
 export interface TokenSpeedConfig {
 	thresholds: TokenSpeedThresholds;
 	colors: TokenSpeedColors;
-	/** 空串 = 跟随 footerNerdIcons 的默认图标。 */
+	/** 默认 ⚡；空串 = 无图标。 */
 	icon: string;
 	countStrategy: TokenSpeedCountStrategy;
 	endTpsBehavior: TokenSpeedEndTpsBehavior;
@@ -73,7 +73,7 @@ export const DEFAULT_TOKEN_SPEED: TokenSpeedConfig = {
 		fast: "#00ff88",
 		blazing: "#44ddff",
 	},
-	icon: "",
+	icon: "⚡",
 	countStrategy: "estimate",
 	endTpsBehavior: "average",
 	slidingWindow: 1000,

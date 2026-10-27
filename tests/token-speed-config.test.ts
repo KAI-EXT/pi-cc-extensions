@@ -96,7 +96,7 @@ test("sliding window clamps into range, junk falls back; updateInterval keeps th
 	assert.equal(normalizeTokenSpeed({ formatDuration: true }).formatDuration, true);
 	assert.equal(normalizeTokenSpeed({ formatDuration: "yes" }).formatDuration, false);
 	assert.equal(normalizeTokenSpeed({ icon: "⚡" }).icon, "⚡");
-	assert.equal(normalizeTokenSpeed({ icon: 3 }).icon, "");
+	assert.equal(normalizeTokenSpeed({ icon: 3 }).icon, "⚡");
 });
 
 test("display mode falls back to legacy on invalid values", () => {

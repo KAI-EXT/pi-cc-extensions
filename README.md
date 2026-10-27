@@ -105,7 +105,7 @@ pi install git:github.com/minuque/pi-cc-extensions
       "fast": "#00ff88",
       "blazing": "#44ddff"
     },
-    "icon": "",                              // 空 = 无图标（同既往）；非空作速率芯片前缀，可设 ⚡/🔥/🚀 等
+    "icon": "⚡",                            // 芯片图标（默认 ⚡）；空串 = 无图标；可设 🔥/💨/🚀 或任意字符
     "countStrategy": "estimate",             // estimate（chars/4 估算，CJK 按 1 字 1 token）/ direct（1 delta=1 token，CJK 失真自担）
     "endTpsBehavior": "average",             // average：流结束定格整段平均 / last：定格最后窗口值
     "slidingWindow": 1000,                   // live 瞬时窗口毫秒，范围 100..30000（30s 硬顶）

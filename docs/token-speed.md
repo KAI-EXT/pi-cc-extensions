@@ -31,12 +31,12 @@ pi 在流式生成回复时，`tokenSpeed` 负责**测量并展示生成速度**
 
 什么都不配也能用：默认四档色已开启，`footerLine*Keys` 里有 `"rate"` 即可看到着色的速率。
 
-最小自定义示例——把速率提到青色档的门槛、换一个图标：
+最小自定义示例——把速率提到青色档的门槛、换个图标：
 
 ```jsonc
 {
   "tokenSpeed": {
-    "icon": "⚡",
+    "icon": "🚀",
     "thresholds": { "slow": 0, "medium": 20, "fast": 40, "blazing": 60 }
   }
 }
@@ -89,8 +89,9 @@ hex 格式（`#RRGGBB`），**逐色校验**：写错的那个色回落默认，
 
 ### `icon` — 芯片图标
 
-- `""`（默认）：跟随 `footerNerdIcons` 的默认行为（无图标）
-- 设为任意字符串即作为芯片前缀：`"icon": "⚡"` → `⚡ 25 tok/s`
+- `"⚡"`（默认）：芯片显示 `⚡ 25 tok/s`
+- `""`：无图标，纯 `25 tok/s`
+- 任意字符均可：`🔥` / `💨` / `🚀` / `🎯` …
 
 ### `countStrategy` — token 计数方式
 
@@ -240,7 +241,7 @@ hex 格式（`#RRGGBB`），**逐色校验**：写错的那个色回落默认，
 | `colors` | object \| null | 四档默认色 | 档位颜色，hex 逐色校验；`null` 关闭着色 |
 | `display` | enum | `"legacy"` | `legacy`/`tps`/`ttft`/`stats`/`full` |
 | `displayColors` | object | `{}` | 后缀三段分色（count/elapsed/ttft），非 legacy 生效 |
-| `icon` | string | `""` | 芯片前缀图标，空 = 跟随默认 |
+| `icon` | string | `"⚡"` | 芯片前缀图标；空串 = 无图标 |
 | `countStrategy` | enum | `"estimate"` | `estimate` 估算 / `direct` 每 delta 1 token |
 | `endTpsBehavior` | enum | `"average"` | 流结束定格：整段平均 / 最后窗口值 |
 | `slidingWindow` | number | `1000` | live 窗口毫秒，100–30000 |

@@ -105,7 +105,7 @@ Renderer snapshots for `on` / `compact` modes: [default](./docs/tool-render-exam
       "fast": "#00ff88",
       "blazing": "#44ddff"
     },
-    "icon": "",                              // empty = no icon (as before); non-empty prefixes the rate chip, e.g. ⚡/🔥/🚀
+    "icon": "⚡",                            // chip icon (default ⚡); empty = no icon; or 🔥/💨/🚀/any char
     "countStrategy": "estimate",             // estimate (chars/4, CJK counts 1 per char) / direct (1 delta=1 token, CJK distortion is on you)
     "endTpsBehavior": "average",             // average: freeze to the whole-run average / last: freeze to the last window value
     "slidingWindow": 1000,                   // live sliding window in ms, range 100..30000 (30s hard cap)
