@@ -140,6 +140,11 @@ test("summaryMarkdown：emoji 分段风（默认段序）", () => {
 		),
 		"> *42s · ↑12.4k ↓3.1k tok · hit 78% · bash×3 edit×1 read×2 write×1 · $0.05*",
 	);
+	// doneDate: true → done 段带日期
+	assert.match(
+		summaryMarkdown(data, { success: "", failed: "" }, { keys: ["done"], doneDate: true }),
+		/> \*done \d{2}-\d{2} \d{2}:\d{2}\*$/,
+	);
 	// 自定义分隔符
 	assert.equal(
 		summaryMarkdown(data, { success: "", failed: "" }, { keys: ["duration", "cost"], sep: " | " }),

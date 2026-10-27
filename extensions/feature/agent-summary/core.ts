@@ -80,6 +80,8 @@ export interface AgentSummaryViewConfig {
 	icons?: boolean;
 	/** cache-hit 段的 Nerd Font 图标（由调用方按 footerNerdIcons 解析）；空串回退 `hit N%` 文本。 */
 	cacheIcon?: string;
+	/** done 段是否带日期（`done 03-12 19:24`）；false 只显示 `done 19:24`。 */
+	doneDate?: boolean;
 }
 
 /** 从全局 config 取出的完整摘要配置（含显示阈值）。 */
@@ -246,12 +248,17 @@ function summaryParts(data: AgentSummaryData, options: AgentSummaryViewConfig): 
 				if (data.failed) parts.push(`✗${data.failed}`);
 				break;
 			case "done": {
-				// 回合结束时刻（本地时区 HH:MM）；0 = 无效时间戳，省略。
+				// 回合结束时刻（本地时区）；0 = 无效时间戳，省略。
 				if (data.endedAt > 0) {
 					const d = new Date(data.endedAt);
-					const hh = String(d.getHours()).padStart(2, "0");
-					const mm = String(d.getMinutes()).padStart(2, "0");
-					parts.push(`done ${hh}:${mm}`);
+					const hhmm = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+					if (options.doneDate) {
+						const mm = String(d.getMonth() + 1).padStart(2, "0");
+						const dd = String(d.getDate()).padStart(2, "0");
+						parts.push(`done ${mm}-${dd} ${hhmm}`);
+					} else {
+						parts.push(`done ${hhmm}`);
+					}
 				}
 				break;
 			}

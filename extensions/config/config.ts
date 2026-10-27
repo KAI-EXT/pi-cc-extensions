@@ -104,6 +104,8 @@ export type Config = {
 	agentSummaryIcons: boolean;
 	/** agent-summary 触发显示的最小工具数；0 = 有任意内容就显示。 */
 	agentSummaryMinTools: number;
+	/** agent-summary done 段是否带日期。 */
+	agentSummaryDoneDate: boolean;
 };
 
 const AGENT_DIR = process.env.PI_CODING_AGENT_DIR ?? join(homedir(), ".pi", "agent");
@@ -202,6 +204,7 @@ export const DEFAULT_CONFIG: Config = {
 	agentSummarySep: " · ",
 	agentSummaryIcons: true,
 	agentSummaryMinTools: 0,
+	agentSummaryDoneDate: false,
 	...DEFAULT_FOOTER_CHIP_LAYOUT,
 };
 
@@ -370,6 +373,7 @@ export function normalizeConfig(input: unknown): Config {
 			0,
 			100,
 		),
+		agentSummaryDoneDate: source.agentSummaryDoneDate === true,
 	};
 }
 
@@ -387,6 +391,7 @@ export function getAgentSummaryConfig(source: Config = config): AgentSummaryFeat
 		sep: source.agentSummarySep,
 		icons: source.agentSummaryIcons,
 		minTools: source.agentSummaryMinTools,
+		doneDate: source.agentSummaryDoneDate,
 	};
 }
 
@@ -482,6 +487,7 @@ export function formatConfigStatus(source: Config = config): string {
 		`agentSummaryKeys=[${source.agentSummaryKeys.join(",")}]`,
 		`agentSummaryIcons=${source.agentSummaryIcons ? "on" : "off"}`,
 		`agentSummaryMinTools=${source.agentSummaryMinTools}`,
+		`agentSummaryDoneDate=${source.agentSummaryDoneDate ? "on" : "off"}`,
 		formatFooterChipSummary(source),
 	].join(" · ");
 }
