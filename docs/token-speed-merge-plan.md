@@ -112,17 +112,31 @@ commands//tps               ──►   后置（同上）
       "fast": "#00ff88", "blazing": "#44ddff"
     },
     "icon": "",                // "" = 跟随 footerNerdIcons 默认；可设 ⚡/🔥/🚀 等
-    "countStrategy": "estimate",   // estimate（现有行为）/ direct（1 delta=1 token）
+    "countStrategy": "estimate",   // estimate（现有行为）/ direct（1 delta=1 token；CJK 下失真，自担）
     "endTpsBehavior": "average",   // average / last
-    "slidingWindow": 1000,         // ms；live 模式窗口
-    "updateInterval": 0,           // 渲染节流 ms
+    "slidingWindow": 1000,         // ms；live 模式窗口，硬顶 30s 防呆
+    "updateInterval": 0,           // 渲染节流 ms；实施前先验证 pi 渲染管线是否已合帧
     "formatDuration": false
     // display / displayColors / providerOverrides → P3/P4 再放开
   }
 }
 ```
 
-> 兼容性约束：`tokenSpeed` 整段缺省时行为与现在完全一致（零破坏升级）。
+### 拍板记录（grill-me 盘问结论，2026-10-27）
+
+| 议题 | 决议 |
+|---|---|
+| 颜色分级默认 | **默认开启四档色**（视觉优先，接受与 cc 主题 dim 风格的差异）；`colors: null` 预留为关闭开关 |
+| `countStrategy: "direct"` | **保留**（明知 CJK 失真，做成可选即为自担） |
+| `endTpsBehavior: "last"` | **保留** |
+| `updateInterval` | **先验证** pi TUI 渲染管线是否已合帧，已合帧则砍掉该选项 |
+| 配置归位 | `footerTokenRate*` 留顶层，`tokenSpeed` 子段只放新增项，保持分裂 |
+| 移植归属 | token-rate.ts 头注释 + `docs/ATTRIBUTION` 注明 pi-token-speed（MIT） |
+| 滑动窗口 | 样本按 `slidingWindow` 动态裁剪，30s 硬顶；`now` 保持参数注入可测 |
+
+> 兼容性约束（2026-10-27 拍板修订）：配置 schema 兼容、结构零破坏；**颜色分级默认开启**
+> （照搬 pi-token-speed 四档色），即视觉行为有默认变化——接受。想回到纯主题色可设
+> `tokenSpeed.colors: null`（后续实现）。
 
 ---
 
@@ -133,7 +147,7 @@ commands//tps               ──►   后置（同上）
 - [ ] 新建 `extensions/feature/shell/token-speed-config.ts`：类型 + 校验
       （阈值升序、hex 颜色、枚举、窗口/节流范围），`normalizeConfig` 深合并
 - [ ] README 配置示例同步
-- 验收：空段零变化；非法值回落默认；`formatConfigStatus` 可见
+- 验收：非法值回落默认；`formatConfigStatus` 可见；注意默认四档色生效后芯片颜色即变（已拍板接受）
 
 ### P2 引擎吸收（核心）
 - [ ] `token-rate.ts`：live 通道改滑动窗口实现（移植 burst/stall + 100ms clamp）
@@ -145,7 +159,7 @@ commands//tps               ──►   后置（同上）
 
 ### P3 渲染增强
 - [ ] footer rate 芯片：按 `tokenSpeed.colors` 分级着色（阈值 → 颜色）
-- [ ] `icon` 支持；`updateInterval` 节流渲染
+- [ ] `icon` 支持；`updateInterval` 节流渲染（前置任务：验证 pi 渲染管线已合帧则砍）
 - [ ] agentSummary `rate` 段：可选沿用同一分级着色（复用同一取色函数）
 - [ ] `formatDuration` 接入耗时显示（若开放 stats 模式）
 - 验收：`tokenSpeed` 缺省时芯片外观与现在一致
