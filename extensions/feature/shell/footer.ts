@@ -41,8 +41,14 @@ import {
 import { createGitStatsRefresher, readGitStats, type GitStats } from "./git-stats.ts";
 import { MCP_STATUS_KEY, buildMcpChip } from "./mcp-chip.ts";
 import { inputTextIndent } from "./prompt-editor.ts";
-import { currentTtftMs, displayTokenRate, formatTokenRate } from "./token-rate.ts";
-import { tokenSpeedRateAnsi } from "./token-speed-config.ts";
+import {
+	currentRunStats,
+	currentTtftMs,
+	displayTokenRate,
+	formatTokenRate,
+	formatTokenRateDisplay,
+} from "./token-rate.ts";
+import { resolveTokenSpeed, tokenSpeedRateAnsi } from "./token-speed-config.ts";
 
 export { parseGitStats } from "./git-stats.ts";
 
@@ -459,19 +465,29 @@ const createCustomFooterFactory =
 				cachePct > 0 ? `${glyphs.cache ? `${glyphs.cache} ` : ""}${Math.floor(cachePct)}%` : "";
 			// 速率数字按 tokenSpeed 四档着色：先关 dim（\x1b[22;39m，同 theme.fg("dim") 收尾码）让档色全亮，
 			// 数字后用 theme.getFgAnsi("dim") 重开 dim，尾部 tok/s/TTFT 继续主题暗色。
+			// providerOverrides：活动模型 provider 命中时用覆盖后的生效配置。
+			const speed = resolveTokenSpeed(config.tokenSpeed, model?.provider);
 			const rateValue = config.footerTokenRate ? displayTokenRate(config.footerTokenRateMode) : 0;
-			const rateLabel = config.footerTokenRate
-				? formatTokenRate(
-						rateValue,
-						currentTtftMs(),
-						config.footerTokenRateMode,
-						config.footerTokenRateTtft,
-						(value) =>
-							`\x1b[22;39m${tokenSpeedRateAnsi(rateValue, config.tokenSpeed)}${value}${theme.getFgAnsi?.("dim") ?? ""}`,
-					)
-				: "";
-			// tokenSpeed.icon 非空时作芯片前缀；空串保持无图标现状。
-			const rateIcon = config.tokenSpeed.icon ? `${config.tokenSpeed.icon} ` : "";
+			const paintRate = (value: string) =>
+				`\x1b[22;39m${tokenSpeedRateAnsi(rateValue, speed)}${value}${theme.getFgAnsi?.("dim") ?? ""}`;
+			// legacy 沿用 avg/live 标签（footerTokenRateTtft 控制 TTFT 括号）；其余走 pi-token-speed 显示模式。
+			const rateLabel = !config.footerTokenRate
+				? ""
+				: speed.display === "legacy"
+					? formatTokenRate(
+							rateValue,
+							currentTtftMs(),
+							config.footerTokenRateMode,
+							config.footerTokenRateTtft,
+							paintRate,
+						)
+					: formatTokenRateDisplay(
+							speed,
+							{ rate: rateValue, ttftMs: currentTtftMs(), runStats: currentRunStats() },
+							paintRate,
+						);
+			// tokenSpeed.icon 非空时作芯片前缀（providerOverrides 命中时用覆盖后的 icon）；空串保持无图标现状。
+			const rateIcon = speed.icon ? `${speed.icon} ` : "";
 			const costLabel =
 				cost || usingSubscription
 					? formatFooterCost(cost, config.footerCurrency, config.footerCurrencyRate)

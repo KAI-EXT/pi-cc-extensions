@@ -3,11 +3,17 @@ import test, { describe } from "node:test";
 import workingMessageExtension from "../extensions/feature/shell/working-message.ts";
 import { initTheme } from "@earendil-works/pi-coding-agent";
 import {
+	DEFAULT_TOKEN_SPEED,
+	normalizeTokenSpeed,
+} from "../extensions/feature/shell/token-speed-config.ts";
+import {
 	carryTokenRate,
+	currentRunStats,
 	currentTokenRate,
 	currentTtftMs,
 	displayTokenRate,
 	formatTokenRate,
+	formatTokenRateDisplay,
 	markFirstToken,
 	pauseTokenRate,
 	recordProviderUsage,
@@ -61,6 +67,98 @@ describe("token rate", { concurrency: false }, () => {
 		assert.equal(
 			formatTokenRate(1234, 812, "live", true, paint),
 			"live <1.2k> tok/s (TTFT: 812ms)",
+		);
+	});
+
+	test("currentRunStats counts tokens like totalTokens and excludes tool pauses from elapsed", () => {
+		resetTokenRate();
+		assert.deepEqual(currentRunStats(1_000), { tokens: 0, elapsedMs: 0 }, "无活动指令时为 0");
+
+		resetTokenRate(1_000);
+		sampleTokenDelta("a".repeat(400), 2_000); // 100 est tokens
+		assert.deepEqual(currentRunStats(2_000), { tokens: 100, elapsedMs: 1_000 });
+		pauseTokenRate(2_500);
+		// 暂停中：时钟停摆（进行中的暂停按 now 动态扣除）。
+		assert.deepEqual(currentRunStats(5_000), { tokens: 100, elapsedMs: 1_500 });
+		resumeTokenRate(4_500); // 结算 2s 暂停
+		assert.deepEqual(currentRunStats(5_000), { tokens: 100, elapsedMs: 2_000 });
+		// tokens 与 totalTokens/average 同源：跨 turn 结转后仍一致。
+		carryTokenRate();
+		sampleTokenDelta("a".repeat(400), 5_500);
+		assert.equal(currentRunStats(6_000).tokens, totalTokens());
+	});
+
+	test("formatTokenRateDisplay renders the four pi-token-speed display modes", () => {
+		const data = { rate: 25.04, ttftMs: 450, runStats: { tokens: 150, elapsedMs: 6_000 } };
+		const speed = (display: string) => normalizeTokenSpeed({ display, icon: "⚡" });
+		// legacy 不是本函数的职责，兜底按 tps 渲染（footer 分支保证不会传 legacy）。
+		assert.equal(formatTokenRateDisplay(speed("legacy"), data), "25 tok/s");
+		assert.equal(formatTokenRateDisplay(speed("tps"), data), "25 tok/s");
+		assert.equal(formatTokenRateDisplay(speed("ttft"), data), "25 tok/s (TTFT: 450ms)");
+		assert.equal(formatTokenRateDisplay(speed("stats"), data), "25 tok/s (150 tok in 6.0s)");
+		assert.equal(
+			formatTokenRateDisplay(speed("full"), data),
+			"25 tok/s (150 tok in 6.0s · TTFT: 450ms)",
+			"full 合并两段，· 分隔",
+		);
+		// k 缩写与 paintValue 只包速率数字（footer 用它做四档色）。
+		assert.equal(
+			formatTokenRateDisplay(speed("tps"), { ...data, rate: 1_234 }, (v) => `<${v}>`),
+			"<1.2k> tok/s",
+		);
+		assert.equal(formatTokenRateDisplay(speed("tps"), { ...data, rate: 0 }), "");
+	});
+
+	test("formatTokenRateDisplay omits missing data and honors formatDuration/displayColors", () => {
+		const speed = normalizeTokenSpeed({
+			display: "full",
+			formatDuration: true,
+			displayColors: { count: "#00ff88", elapsed: "#ffaa00", ttft: "#44ddff" },
+		});
+		// token 未出（tokens=0）时 stats 段省略，只剩 TTFT（仍按 displayColors.ttft 上色）。
+		assert.equal(
+			formatTokenRateDisplay(speed, {
+				rate: 25,
+				ttftMs: 450,
+				runStats: { tokens: 0, elapsedMs: 0 },
+			}),
+			`25 tok/s (\x1b[38;2;68;221;255mTTFT: 450ms\x1b[39m)`,
+		);
+		assert.equal(
+			formatTokenRateDisplay(speed, {
+				rate: 25,
+				ttftMs: 0,
+				runStats: { tokens: 150, elapsedMs: 0 },
+			}),
+			`25 tok/s (\x1b[38;2;0;255;136m150 tok\x1b[39m in \x1b[38;2;255;170;0m0.0s\x1b[39m)`,
+		);
+		// formatDuration 开启：92.3s → 1m 32s（utils/format 折算），亚秒回落一位小数秒；
+		// elapsed 段带 displayColors 色，断言只看折算文本。
+		assert.ok(
+			formatTokenRateDisplay(speed, {
+				rate: 25,
+				ttftMs: 0,
+				runStats: { tokens: 150, elapsedMs: 92_300 },
+			}).includes("1m 32s"),
+		);
+		// displayColors：后缀段逐段 truecolor，收尾 \x1b[39m；速率数字仍由 paintValue 负责。
+		const rendered = formatTokenRateDisplay(speed, {
+			rate: 25,
+			ttftMs: 450,
+			runStats: { tokens: 150, elapsedMs: 6_000 },
+		});
+		assert.ok(
+			rendered.includes("\x1b[38;2;0;255;136m150 tok\x1b[39m in \x1b[38;2;255;170;0m6s\x1b[39m"),
+		);
+		assert.ok(rendered.includes("\x1b[38;2;68;221;255mTTFT: 450ms\x1b[39m"));
+		// 缺省 displayColors：括号段不上色。
+		assert.equal(
+			formatTokenRateDisplay(normalizeTokenSpeed({ display: "stats" }), {
+				rate: 25,
+				ttftMs: 0,
+				runStats: { tokens: 150, elapsedMs: 6_000 },
+			}),
+			"25 tok/s (150 tok in 6.0s)",
 		);
 	});
 

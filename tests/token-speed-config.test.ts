@@ -10,6 +10,8 @@ import {
 	formatTokenSpeedSummary,
 	hexToTruecolor,
 	normalizeTokenSpeed,
+	normalizeTokenSpeedOverride,
+	resolveTokenSpeed,
 	tokenSpeedRateAnsi,
 	tokenSpeedTier,
 } from "../extensions/feature/shell/token-speed-config.ts";
@@ -95,6 +97,113 @@ test("sliding window clamps into range, junk falls back; updateInterval keeps th
 	assert.equal(normalizeTokenSpeed({ formatDuration: "yes" }).formatDuration, false);
 	assert.equal(normalizeTokenSpeed({ icon: "⚡" }).icon, "⚡");
 	assert.equal(normalizeTokenSpeed({ icon: 3 }).icon, "");
+});
+
+test("display mode falls back to legacy on invalid values", () => {
+	assert.equal(DEFAULT_TOKEN_SPEED.display, "legacy");
+	assert.equal(normalizeTokenSpeed({ display: "stats" }).display, "stats");
+	assert.equal(normalizeTokenSpeed({ display: "full" }).display, "full");
+	assert.equal(normalizeTokenSpeed({ display: "bogus" }).display, "legacy");
+	assert.equal(normalizeTokenSpeed({ display: 7 }).display, "legacy");
+	assert.equal(normalizeTokenSpeed({}).display, "legacy");
+});
+
+test("displayColors keeps only valid hex keys, missing keys mean no paint", () => {
+	assert.deepEqual(normalizeTokenSpeed({}).displayColors, {});
+	assert.deepEqual(normalizeTokenSpeed({ displayColors: "red" }).displayColors, {});
+	assert.deepEqual(
+		normalizeTokenSpeed({
+			displayColors: { count: "#00ff88", elapsed: "nope", ttft: "#44ddffff", junk: "#123456" },
+		}).displayColors,
+		{ count: "#00ff88" },
+	);
+});
+
+test("providerOverrides keep sparse valid blocks and drop junk entries", () => {
+	// 空段/非对象值丢弃；字段级非法不回填默认（回填会把 base 顶掉）。
+	assert.deepEqual(normalizeTokenSpeed({ providerOverrides: "x" }).providerOverrides, {});
+	assert.deepEqual(
+		normalizeTokenSpeed({ providerOverrides: { anthropic: "x" } }).providerOverrides,
+		{},
+	);
+	assert.deepEqual(
+		normalizeTokenSpeed({ providerOverrides: { anthropic: { display: "bogus", icon: 3 } } })
+			.providerOverrides,
+		{},
+	);
+	// 阈值部分块（非升序/缺字段）整块丢弃；合法整块保留。
+	assert.deepEqual(
+		normalizeTokenSpeed({ providerOverrides: { p: { thresholds: { slow: 30, medium: 15 } } } })
+			.providerOverrides,
+		{},
+	);
+	const kept = normalizeTokenSpeed({
+		providerOverrides: {
+			anthropic: {
+				thresholds: { slow: 5, medium: 25, fast: 50, blazing: 80 },
+				slidingWindow: 99,
+				colors: { fast: "#123456" },
+				displayColors: { ttft: "#abcdef" },
+				formatDuration: false,
+				updateInterval: 500,
+			},
+		},
+	}).providerOverrides.anthropic;
+	assert.deepEqual(kept, {
+		thresholds: { slow: 5, medium: 25, fast: 50, blazing: 80 },
+		slidingWindow: 100,
+		colors: { fast: "#123456" },
+		displayColors: { ttft: "#abcdef" },
+		formatDuration: false,
+	});
+});
+
+test("normalizeTokenSpeedOverride stays sparse for direct reuse", () => {
+	assert.deepEqual(normalizeTokenSpeedOverride("x"), {});
+	assert.deepEqual(normalizeTokenSpeedOverride({ countStrategy: "direct", icon: "⚡" }), {
+		countStrategy: "direct",
+		icon: "⚡",
+	});
+});
+
+test("resolveTokenSpeed deep-merges only the matched provider's override", () => {
+	const base = normalizeTokenSpeed({
+		display: "tps",
+		icon: "⚡",
+		providerOverrides: {
+			anthropic: {
+				display: "full",
+				slidingWindow: 2_000,
+				countStrategy: "direct",
+				colors: { fast: "#123456" },
+				displayColors: { ttft: "#abcdef" },
+				thresholds: { slow: 5, medium: 25, fast: 50, blazing: 80 },
+				formatDuration: true,
+			},
+		},
+	});
+	// 未命中/无 provider：原样返回 base。
+	assert.equal(resolveTokenSpeed(base, "openai"), base);
+	assert.equal(resolveTokenSpeed(base, undefined), base);
+	assert.equal(resolveTokenSpeed(base, ""), base);
+
+	const effective = resolveTokenSpeed(base, "anthropic");
+	// 覆盖字段生效。
+	assert.equal(effective.display, "full");
+	assert.equal(effective.slidingWindow, 2_000);
+	assert.equal(effective.countStrategy, "direct");
+	assert.equal(effective.formatDuration, true);
+	assert.deepEqual(effective.thresholds, { slow: 5, medium: 25, fast: 50, blazing: 80 });
+	// colors/displayColors 逐色深合并：覆盖色生效，其余沿用 base。
+	assert.equal(effective.colors.fast, "#123456");
+	assert.equal(effective.colors.slow, base.colors.slow);
+	assert.deepEqual(effective.displayColors, { ttft: "#abcdef" });
+	// base 独有的字段不被覆盖块顶掉。
+	assert.equal(effective.icon, "⚡");
+	assert.equal(effective.endTpsBehavior, base.endTpsBehavior);
+	// 摘要行等按 tokenSpeedTier 取档时用生效阈值（rate 20：base 落 medium，覆盖后落 slow）。
+	assert.equal(tokenSpeedTier(20, effective.thresholds), "slow");
+	assert.equal(tokenSpeedTier(20, base.thresholds), "medium");
 });
 
 test("tokenSpeedTier maps rates onto four tiers and tokenSpeedRateAnsi emits truecolor codes", () => {

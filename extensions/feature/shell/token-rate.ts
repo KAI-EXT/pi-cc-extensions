@@ -17,10 +17,19 @@
  * 同一指令内只记第一次，定格后保留到下一条指令覆盖。
  *
  * 引擎口径（countStrategy / endTpsBehavior / slidingWindow）由扩展入口在 config 加载后经
- * setTokenSpeedOptions 注入一次；不传即默认（estimate/average/1000），行为与既往一致。
+ * setTokenSpeedOptions 注入；providerOverrides 命中时在 session_start / model_select 按活动
+ * 模型 provider 重注入。不传即默认（estimate/average/1000），行为与既往一致。
+ * currentRunStats() 返回本指令累计 token 与扣除工具暂停的耗时（stats/full 显示模式口径，
+ * tokens 与 totalTokens/average 同源，elapsed 不含暂停；average 的分母含工具等待，两者不同）。
  */
 
-import type { TokenSpeedCountStrategy, TokenSpeedEndTpsBehavior } from "./token-speed-config.ts";
+import { formatDuration, formatTokenCount } from "../../utils/format.ts";
+import {
+	hexToTruecolor,
+	type TokenSpeedCountStrategy,
+	type TokenSpeedConfig,
+	type TokenSpeedEndTpsBehavior,
+} from "./token-speed-config.ts";
 
 export type TokenRateMode = "average" | "live";
 
@@ -51,7 +60,7 @@ const DEFAULT_SPEED_OPTIONS: TokenSpeedEngineOptions = {
 
 let speedOptions: TokenSpeedEngineOptions = { ...DEFAULT_SPEED_OPTIONS };
 
-/** 扩展入口在 config 加载后注入一次；未提供的字段回落默认，窗口夹到 100..30000ms。 */
+/** 扩展入口注入引擎口径；providerOverrides 命中时按活动模型 provider 重注入。未提供的字段回落默认，窗口夹到 100..30000ms。 */
 export function setTokenSpeedOptions(
 	opts: {
 		countStrategy?: TokenSpeedCountStrategy;
@@ -78,6 +87,8 @@ let runStartTime = 0;
 let carriedTokens = 0;
 let currentTokens = 0;
 let pauseStartedAt = 0;
+/** 已结算的工具暂停总时长；进行中的暂停在 currentRunStats 里按 now 动态扣除。 */
+let pausedMs = 0;
 /** 并行工具调用数；>0 时瞬时采样暂停。 */
 let activeTools = 0;
 let lastRate = 0;
@@ -96,6 +107,7 @@ export function resetTokenRate(startAt = 0): void {
 	carriedTokens = 0;
 	currentTokens = 0;
 	pauseStartedAt = 0;
+	pausedMs = 0;
 	activeTools = 0;
 	lastRate = 0;
 	lastLiveRate = 0;
@@ -127,10 +139,11 @@ export function pauseTokenRate(now = Date.now()): void {
 	if (activeTools === 1 && !pauseStartedAt) pauseStartedAt = now;
 }
 
-/** 工具执行结束：计数 -1，最后一个工具结束才恢复采样。 */
-export function resumeTokenRate(): void {
+/** 工具执行结束：计数 -1，最后一个工具结束才恢复采样并结算暂停时长。 */
+export function resumeTokenRate(now = Date.now()): void {
 	activeTools = Math.max(0, activeTools - 1);
 	if (activeTools === 0 && pauseStartedAt) {
+		pausedMs += Math.max(0, now - pauseStartedAt);
 		pauseStartedAt = 0;
 	}
 }
@@ -265,6 +278,14 @@ export function currentTtftMs(): number {
 	return Math.max(0, firstTokenAt - runStartTime);
 }
 
+/** 本指令累计 token 与耗时；耗时扣除工具暂停（含进行中的），无活动指令时为 0。 */
+export function currentRunStats(now = Date.now()): { tokens: number; elapsedMs: number } {
+	const tokens = totalTokens();
+	if (!runStartTime) return { tokens: 0, elapsedMs: 0 };
+	const pendingPause = pauseStartedAt ? Math.max(0, now - pauseStartedAt) : 0;
+	return { tokens, elapsedMs: Math.max(0, now - runStartTime - pausedMs - pendingPause) };
+}
+
 /** 不足 1 秒用毫秒，否则用一位小数的秒。 */
 export function formatTtft(ttftMs: number): string {
 	if (ttftMs < 1000) return `${Math.round(ttftMs)}ms`;
@@ -287,4 +308,55 @@ export function formatTokenRate(
 		showTtft && Number.isFinite(ttftMs) && ttftMs > 0 ? ` (TTFT: ${formatTtft(ttftMs)})` : "";
 	const label = mode === "live" ? "live" : "avg";
 	return `${label} ${value} tok/s${ttft}`;
+}
+
+/** stats 后缀的耗时：formatDuration 开启走 m/h 折算，亚秒空串回落一位小数秒。 */
+function formatStatsElapsed(elapsedMs: number, foldDuration: boolean): string {
+	if (foldDuration) {
+		const folded = formatDuration(elapsedMs);
+		if (folded) return folded;
+	}
+	return `${(elapsedMs / 1000).toFixed(1)}s`;
+}
+
+/**
+ * 非 legacy 显示模式的芯片文本（pi-token-speed 语义，图标仍由 footer 作芯片前缀）：
+ * tps `25 tok/s` / ttft `25 tok/s (TTFT: 450ms)` / stats `25 tok/s (150 tok in 6.0s)` /
+ * full 合并 `(... · TTFT: 450ms)`。速率数字按四档着色（paintValue，同 legacy）；
+ * displayColors 给 count/elapsed/ttft 后缀段分色，缺省不上色。legacy 由调用方走
+ * formatTokenRate，此处收到 legacy 兜底按 tps 渲染。无数据的括号段自动省略。
+ */
+export function formatTokenRateDisplay(
+	speed: TokenSpeedConfig,
+	data: { rate: number; ttftMs: number; runStats: { tokens: number; elapsedMs: number } },
+	paintValue?: (value: string) => string,
+): string {
+	if (!Number.isFinite(data.rate) || data.rate <= 0) return "";
+	const display = speed.display === "legacy" ? "tps" : speed.display;
+	const plain =
+		data.rate >= 1000 ? `${(data.rate / 1000).toFixed(1)}k` : `${Math.round(data.rate)}`;
+	const paintSegment = (text: string, hex: string | undefined): string =>
+		hex ? `${hexToTruecolor(hex)}${text}\x1b[39m` : text;
+	const count = paintSegment(
+		`${formatTokenCount(data.runStats.tokens)} tok`,
+		speed.displayColors.count,
+	);
+	const elapsed = paintSegment(
+		formatStatsElapsed(data.runStats.elapsedMs, speed.formatDuration),
+		speed.displayColors.elapsed,
+	);
+	const ttft = paintSegment(`TTFT: ${formatTtft(data.ttftMs)}`, speed.displayColors.ttft);
+	const statsPart = data.runStats.tokens > 0 ? `${count} in ${elapsed}` : "";
+	const ttftPart = Number.isFinite(data.ttftMs) && data.ttftMs > 0 ? ttft : "";
+	const parts =
+		display === "tps"
+			? []
+			: display === "stats"
+				? [statsPart]
+				: display === "ttft"
+					? [ttftPart]
+					: [statsPart, ttftPart];
+	const shown = parts.filter(Boolean);
+	const value = paintValue ? paintValue(plain) : plain;
+	return `${value} tok/s${shown.length > 0 ? ` (${shown.join(" · ")})` : ""}`;
 }

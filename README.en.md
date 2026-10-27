@@ -109,7 +109,16 @@ Renderer snapshots for `on` / `compact` modes: [default](./docs/tool-render-exam
     "endTpsBehavior": "average",             // average: freeze to the whole-run average / last: freeze to the last window value
     "slidingWindow": 1000,                   // live sliding window in ms, range 100..30000 (30s hard cap)
     "updateInterval": 0,                     // kept but inert: the pi TUI render pipeline already coalesces frames (dedup + 16ms frame throttle)
-    "formatDuration": false                  // duration formatting: 92.3s → 1m 32.3s
+    "formatDuration": false,                 // duration formatting: 92.3s → 1m 32s (the elapsed suffix in stats/full modes)
+    "display": "legacy",                     // chip shape: legacy (default, avg/live labels) / tps (`25 tok/s`) / ttft (`25 tok/s (TTFT: 450ms)`), stats (`25 tok/s (150 tok in 6.0s)`), full (both segments joined with `·`)
+    "displayColors": {                       // suffix colors for non-legacy modes (token count / elapsed / TTFT segments); missing fields stay unpainted, invalid hex is dropped
+      "count": "#00ff88",
+      "elapsed": "#ffaa00",
+      "ttft": "#44ddff"
+    },
+    "providerOverrides": {                   // per-provider overrides: keys are exact provider ids of the active model; the block is deep-merged over the base (thresholds whole-block, colors/displayColors per color; overridable: thresholds/colors/display/displayColors/countStrategy/endTpsBehavior/slidingWindow/icon/formatDuration)
+      "anthropic": { "display": "full", "slidingWindow": 2000 }
+    }
   }
 
   // agent-summary (turn summary line)

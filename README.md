@@ -109,7 +109,16 @@ pi install git:github.com/minuque/pi-cc-extensions
     "endTpsBehavior": "average",             // average：流结束定格整段平均 / last：定格最后窗口值
     "slidingWindow": 1000,                   // live 瞬时窗口毫秒，范围 100..30000（30s 硬顶）
     "updateInterval": 0,                     // 保留键不再生效：pi TUI 渲染管线已合帧（去重 + 16ms 帧节流），节流不再需要
-    "formatDuration": false                  // 耗时格式化：92.3s → 1m 32.3s
+    "formatDuration": false,                 // 耗时格式化：92.3s → 1m 32s（stats/full 模式的耗时后缀）
+    "display": "legacy",                     // 芯片形态：legacy（默认，沿用 avg/live 标签）/ tps（`25 tok/s`）/ ttft（`25 tok/s (TTFT: 450ms)`）/ stats（`25 tok/s (150 tok in 6.0s)`）/ full（两段合并，`·` 分隔）
+    "displayColors": {                       // 非 legacy 模式的后缀分色（token 数/耗时/TTFT 段）；字段缺省不上色，非法 hex 丢弃
+      "count": "#00ff88",
+      "elapsed": "#ffaa00",
+      "ttft": "#44ddff"
+    },
+    "providerOverrides": {                   // 按 provider 覆盖：键为活动模型 provider 精确串，覆盖块与 base 深合并（thresholds 整块，colors/displayColors 逐色；可覆盖 thresholds/colors/display/displayColors/countStrategy/endTpsBehavior/slidingWindow/icon/formatDuration）
+      "anthropic": { "display": "full", "slidingWindow": 2000 }
+    }
   }
 
   // agent-summary（回合摘要行）
