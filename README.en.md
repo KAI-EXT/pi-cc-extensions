@@ -95,7 +95,7 @@ Renderer snapshots for `on` / `compact` modes: [default](./docs/tool-render-exam
   "footerLine3Keys": [],                   // painted only when a chip is visible
 
   // agent-summary (turn summary line)
-  "agentSummaryKeys": ["duration", "tokens", "cache", "cache-hit", "rate", "tools", "cost", "failed"], // segment order; options: duration/tokens/cache/reasoning/turns/model/tools/cost/failed
+  "agentSummaryKeys": ["duration", "tokens", "cache", "cache-hit", "rate", "tools", "cost", "failed"], // segment order; options: duration/tokens/cache/cache-hit/rate/reasoning/turns/model/tools/cost/failed
   "agentSummarySep": " · ",                // segment separator
   "agentSummaryIcons": true,               // emoji icons; false = plain text
   "agentSummaryMinTools": 0                // min tool calls before showing; 0 = show whenever there is content, 2 = legacy behavior
