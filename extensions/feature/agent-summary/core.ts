@@ -296,11 +296,12 @@ export function summaryMarkdown(
 	const parts = summaryParts(data, options);
 	if (parts.length === 0) return "";
 	// 数字/计数用 success 色，失败段用 failed 色；已自带档色的段（rate）不再二次补色。
+	// /g：段内所有数字都要上色（tokens 段的 ↓、tools 各计数、done 的日期时间等）。
 	const paintPart = (part: string) => {
 		if (part.includes("\x1b[")) return part;
 		const code = part.startsWith("✗") ? colors.failed : colors.success;
 		if (!code) return part;
-		return part.replace(/(\d+(?:\.\d+)?k?)/, `${code}$1\x1b[0m`);
+		return part.replace(/(\d+(?:\.\d+)?k?)/g, `${code}$1\x1b[0m`);
 	};
 	const line = parts.map(paintPart).join(options.sep ?? " · ");
 	return options.italic ? `> *${line}*` : `> ${line}`;
