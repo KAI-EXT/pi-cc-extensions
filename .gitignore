@@ -11,4 +11,6 @@ nul
 .pi/
 .tmp/
 .temp/
-docs/token-speed-merge-plan.md
+
+# 本地方案目录（不提交）
+agent/

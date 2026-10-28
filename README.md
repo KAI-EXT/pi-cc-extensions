@@ -18,7 +18,7 @@
 pi install npm:pi-cc-extensions
 
 # GitHub
-pi install git:github.com/minuque/pi-cc-extensions
+pi install git:github.com/KAI-EXT/pi-cc-extensions
 ```
 
 安装后执行 `/reload`
@@ -32,7 +32,7 @@ pi install git:github.com/minuque/pi-cc-extensions
 | Fullscreen mode       | 工具卡/group 单击展开与收起、预览、hover 高亮、回到底部按钮                 | `TUIMODE=fullscreen` 或 `--tui-mode fullscreen` |
 | 配置面板              | `Style / Features / UI / Diff / Thinking / Footer` 六页签；Footer 页签含 tokenSpeed 可视化编辑（显示模式/图标/计数策略/结束行为/滑动窗口/四档阈值/四档色，provider 覆盖只读展示），Features 页签含 agentSummary 段开关与日期/斜体切换 | `/ccstyle`                                      |
 | 上下文检查            | 查看上下文占用，并预览 System prompt、Memory、Skills、Tools definition 和消息内容 | `/context`                                      |
-| Session/Subagent 引用 | 搜索并注入历史 Session 或现有 SubAgent 的有效上下文                             | `@`                                             |
+| Session/Subagent 引用 | 搜索并注入历史 Session 或会话中已有 SubAgent 的有效上下文                             | `@`                                             |
 | 状态栏                | 显示：模型、上下文、缓存、费用、git并适配 @narumitw/pi-usage 实时显示额度；输出速率按速分档着色（tokenSpeed）；git/缓存图标可关 Nerd Font | `/ccstyle`                              |
 | 主题                  | 随包提供内置 CC Dark、CC Light 主题                                             | `/settings` → Theme                             |
 
@@ -46,6 +46,7 @@ pi install git:github.com/minuque/pi-cc-extensions
 {
   // style
   "mode": "compact",                       // on / compact / off
+  "language": "zh",                        // /ccstyle 面板显示语言：zh（默认，简体中文）/ en
   "excludeRenderers": [],                  // 走原生渲染的工具名，匹配忽略大小写；Agent 始终保留专用渲染器
 
   // features
@@ -76,7 +77,7 @@ pi install git:github.com/minuque/pi-cc-extensions
   "diffWordWrap": true,                    // 长 diff 行换行
 
   // thinking
-  "useSummaryTitlesAsThinkingTitle": true, // 用最新摘要作思考标题
+  "useSummaryTitlesAsThinkingTitle": true, // 用最近一条摘要作思考标题
   "previewLines": 3,                       // 预览行数，0 隐藏
   "animationIntervalMs": 90,               // 标题动画间隔（毫秒）
 
@@ -111,7 +112,7 @@ pi install git:github.com/minuque/pi-cc-extensions
     "slidingWindow": 1000,                   // live 瞬时窗口毫秒，范围 100..30000（30s 硬顶）
     "updateInterval": 0,                     // 保留键不再生效：pi TUI 渲染管线已合帧（去重 + 16ms 帧节流），节流不再需要
     "formatDuration": false,                 // 耗时格式化：92.3s → 1m 32s（stats/full 模式的耗时后缀）
-    "display": "legacy",                     // 芯片形态：legacy（默认，沿用现有格式：无标签，live 模式带 live 前缀）/ tps（`25 tok/s`）/ ttft（`25 tok/s (TTFT: 450ms)`）/ stats（`25 tok/s (150 tok in 6.0s)`）/ full（两段合并，`·` 分隔）
+    "display": "legacy",                     // 芯片形态：legacy（默认，沿用默认格式：无标签，live 模式带 live 前缀）/ tps（`25 tok/s`）/ ttft（`25 tok/s (TTFT: 450ms)`）/ stats（`25 tok/s (150 tok in 6.0s)`）/ full（两段合并，`·` 分隔）
     "displayColors": {                       // 非 legacy 模式的后缀分色（token 数/耗时/TTFT 段）；字段缺省不上色，非法 hex 丢弃
       "count": "#00ff88",
       "elapsed": "#ffaa00",
@@ -187,7 +188,9 @@ pi -e .              # 只跑一次，不改 settings.json
 
 ## 致谢
 
+- 本项目 fork 自 [`minuque/pi-cc-extensions`](https://github.com/minuque/pi-cc-extensions)（MIT），在其基础上扩展。
 - Rich diff 改编自 [`MasuRii/pi-tool-display`](https://github.com/MasuRii/pi-tool-display)（MIT）；详见 [`extensions/renderer/tool/diff/ATTRIBUTION.md`](./extensions/renderer/tool/diff/ATTRIBUTION.md)。
+- 实时 Token 速率（滑动窗口引擎与 `tokenSpeed` 配置族：分级着色、显示模式、计数策略、provider 覆盖）改编自 [`gsanhueza/pi-token-speed`](https://github.com/gsanhueza/pi-token-speed)（MIT）；详见 [`docs/ATTRIBUTION.md`](./docs/ATTRIBUTION.md)。
 
 ## 许可证
 

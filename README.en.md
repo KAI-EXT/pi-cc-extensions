@@ -18,7 +18,7 @@ Click the cover to play the demo video
 pi install npm:pi-cc-extensions
 
 # GitHub
-pi install git:github.com/minuque/pi-cc-extensions
+pi install git:github.com/KAI-EXT/pi-cc-extensions
 ```
 
 Run `/reload` after installation.
@@ -46,6 +46,7 @@ Renderer snapshots for `on` / `compact` modes: [default](./docs/tool-render-exam
 {
   // style
   "mode": "compact",                            // on / compact / off
+  "language": "zh",                        // /ccstyle panel language: zh (default, Simplified Chinese) / en
   "excludeRenderers": [],                  // tools keeping the native renderer, matched case-insensitively; Agent always keeps its dedicated renderer
 
   // features
@@ -187,7 +188,9 @@ pi -e .              # one run, does not edit settings.json
 
 ## Credits
 
+- This project is a fork of [`minuque/pi-cc-extensions`](https://github.com/minuque/pi-cc-extensions) (MIT), extended on top of it.
 - Rich diffs are adapted from [`MasuRii/pi-tool-display`](https://github.com/MasuRii/pi-tool-display) (MIT). See [`extensions/renderer/tool/diff/ATTRIBUTION.md`](./extensions/renderer/tool/diff/ATTRIBUTION.md).
+- The live token-rate engine (sliding window) and the `tokenSpeed` config family (tier colors, display modes, count strategies, provider overrides) are adapted from [`gsanhueza/pi-token-speed`](https://github.com/gsanhueza/pi-token-speed) (MIT). See [`docs/ATTRIBUTION.md`](./docs/ATTRIBUTION.md).
 
 ## License
 

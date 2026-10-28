@@ -65,7 +65,7 @@ hex 格式（`#RRGGBB`），**逐色校验**：写错的那个色回落默认，
 
 | 值 | 效果示例 |
 |---|---|
-| `legacy`（默认） | 沿用现有格式：`25 tok/s`（live 模式为 `live 30 tok/s`，由顶层 `footerTokenRateMode` 决定；`footerTokenRateTtft` 控制是否带 TTFT） |
+| `legacy`（默认） | 沿用默认格式：`25 tok/s`（live 模式为 `live 30 tok/s`，由顶层 `footerTokenRateMode` 决定；`footerTokenRateTtft` 控制是否带 TTFT） |
 | `tps` | `25 tok/s` |
 | `ttft` | `25 tok/s (TTFT: 450ms)` |
 | `stats` | `25 tok/s (150 tok in 6.0s)` |
