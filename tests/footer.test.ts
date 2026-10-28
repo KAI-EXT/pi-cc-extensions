@@ -29,6 +29,8 @@ import {
 	FOOTER_GIT_KEY,
 	FOOTER_MODEL_KEY,
 	FOOTER_RATE_KEY,
+	FOOTER_TOKENS_KEY,
+	ensureFooterTokensKey,
 	isBuiltinFooterKey,
 	PI_USAGE_KEY,
 	PI_USAGE_SOURCE,
@@ -58,6 +60,43 @@ test("normalizeConfig defaults enableCustomFooter on and honors explicit off", (
 	);
 	assert.equal(normalizeConfig({}).footerTokenRate, true);
 	assert.equal(normalizeConfig({ footerTokenRate: false }).footerTokenRate, false);
+	assert.equal(normalizeConfig({}).footerTotalTokens, true);
+	assert.equal(normalizeConfig({ footerTotalTokens: false }).footerTotalTokens, false);
+	assert.match(formatConfigStatus(normalizeConfig({})), /footerTotalTokens=on/);
+	assert.match(
+		formatConfigStatus(normalizeConfig({ footerTotalTokens: false })),
+		/footerTotalTokens=off/,
+	);
+	// tokens 内置芯片：默认 line1 收尾；旧配置补齐；用户已隐藏/已排布时不补。
+	assert.ok((DEFAULT_FOOTER_LINE1_KEYS as readonly string[]).includes(FOOTER_TOKENS_KEY));
+	assert.equal(isBuiltinFooterKey(FOOTER_TOKENS_KEY), true, "tokens 须按内置芯片渲染");
+	const legacy = normalizeFooterChipLayout({
+		footerLine1Keys: ["plugin-a"],
+		footerLine2Keys: [],
+		footerLine3Keys: [],
+		footerHiddenKeys: [],
+	});
+	const ensured = ensureFooterTokensKey(legacy);
+	assert.ok(
+		[...ensured.footerLine1Keys, ...ensured.footerLine2Keys, ...ensured.footerLine3Keys].includes(
+			FOOTER_TOKENS_KEY,
+		),
+		"旧配置缺 tokens 时应被补齐可见",
+	);
+	const managed = ensureFooterTokensKey(
+		normalizeFooterChipLayout({
+			footerLine1Keys: ["cwd", "git"],
+			footerLine2Keys: [],
+			footerLine3Keys: [],
+			footerHiddenKeys: ["tokens"],
+		}),
+	);
+	assert.ok(
+		![...managed.footerLine1Keys, ...managed.footerLine2Keys, ...managed.footerLine3Keys].includes(
+			FOOTER_TOKENS_KEY,
+		),
+		"用户已隐藏 tokens 时不应补回行列表",
+	);
 	assert.equal(normalizeConfig({}).footerTokenRateMode, "average");
 	assert.equal(normalizeConfig({ footerTokenRateMode: "live" }).footerTokenRateMode, "live");
 	assert.equal(normalizeConfig({ footerTokenRateMode: "instant" }).footerTokenRateMode, "average");
@@ -140,6 +179,7 @@ test("normalizeConfig keeps explicit empty hiddenKeys and inserts builtins aroun
 		FOOTER_CONTEXT_KEY,
 		FOOTER_CACHE_KEY,
 		FOOTER_RATE_KEY,
+		FOOTER_TOKENS_KEY,
 		PI_USAGE_KEY,
 	]);
 	assert.deepEqual(next.footerLine2Keys, []);
@@ -158,6 +198,7 @@ test("normalizeFooterChipLayout migrates old plugin-only lines and keeps an expl
 		FOOTER_CONTEXT_KEY,
 		FOOTER_CACHE_KEY,
 		FOOTER_RATE_KEY,
+		FOOTER_TOKENS_KEY,
 		"usage",
 		"ponytail",
 	]);
@@ -186,6 +227,7 @@ test("normalizeFooterChipLayout rewrites legacy localUsage and piUsage keys to p
 		FOOTER_CONTEXT_KEY,
 		FOOTER_CACHE_KEY,
 		FOOTER_RATE_KEY,
+		FOOTER_TOKENS_KEY,
 		PI_USAGE_KEY,
 		"usage",
 	]);
@@ -201,6 +243,7 @@ test("normalizeFooterChipLayout rewrites legacy localUsage and piUsage keys to p
 		FOOTER_CONTEXT_KEY,
 		FOOTER_CACHE_KEY,
 		FOOTER_RATE_KEY,
+		FOOTER_TOKENS_KEY,
 		PI_USAGE_KEY,
 	]);
 	assert.deepEqual(fromCamel.footerLine2Keys, []);

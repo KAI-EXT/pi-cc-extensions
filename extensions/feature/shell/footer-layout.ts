@@ -15,8 +15,12 @@ export const FOOTER_RATE_KEY = "rate";
 export const FOOTER_COST_KEY = "cost";
 export const FOOTER_CWD_KEY = "cwd";
 export const FOOTER_GIT_KEY = "git";
+/** 会话累计 token（provider totalTokens：input+output+cacheRead+cacheWrite）。 */
+export const FOOTER_TOKENS_KEY = "total-tokens";
+/** 改名前的旧写法：配置里出现时归一为新 key。 */
+const LEGACY_TOKENS_KEYS = new Set(["tokens"]);
 
-/** 默认第一行：cwd/pi-usage/git 在左，model/context/cache/rate 在右。 */
+/** 默认第一行：cwd/pi-usage/git 在左，model/context/cache/rate 在右，tokens 收尾。 */
 export const DEFAULT_FOOTER_LINE1_KEYS = [
 	FOOTER_CWD_KEY,
 	PI_USAGE_KEY,
@@ -25,6 +29,7 @@ export const DEFAULT_FOOTER_LINE1_KEYS = [
 	FOOTER_CONTEXT_KEY,
 	FOOTER_CACHE_KEY,
 	FOOTER_RATE_KEY,
+	FOOTER_TOKENS_KEY,
 ] as const;
 
 /** 默认第二行：空（全部芯片已在第一行）。 */
@@ -41,7 +46,9 @@ const LEGACY_FIXED_FOOTER_KEYS = [
 	FOOTER_GIT_KEY,
 ] as const;
 
-const BUILTIN_FOOTER_KEYS = new Set<string>(LEGACY_FIXED_FOOTER_KEYS);
+// tokens 不是 legacy 项，但也是内置芯片（画在本扩展，非插件 status）：一并纳入内置集合，
+// 否则用户把它写进行列表时会被当成未知插件芯片渲染为空。
+const BUILTIN_FOOTER_KEYS = new Set<string>([...LEGACY_FIXED_FOOTER_KEYS, FOOTER_TOKENS_KEY]);
 
 export function isBuiltinFooterKey(key: string): boolean {
 	return BUILTIN_FOOTER_KEYS.has(key);
@@ -84,6 +91,7 @@ export function normalizeFooterKeyList(value: unknown): string[] {
 		if (typeof item !== "string") continue;
 		let key = item.trim();
 		if (LEGACY_PI_USAGE_KEYS.has(key)) key = PI_USAGE_KEY;
+		if (LEGACY_TOKENS_KEYS.has(key)) key = FOOTER_TOKENS_KEY;
 		if (!key || seen.has(key)) continue;
 		seen.add(key);
 		out.push(key);
@@ -125,6 +133,15 @@ function ensureBuiltinKeys(
 		footerLine2Keys: [...DEFAULT_FOOTER_LINE2_KEYS, ...line2],
 		footerLine3Keys: line3,
 	};
+}
+
+/** tokens 是后加的内置芯片：旧配置行列表里没有且未隐藏时，补到 line1 尾部，升级后默认可见。 */
+export function ensureFooterTokensKey(layout: FooterChipLayout): FooterChipLayout {
+	const known = [...layout.footerLine1Keys, ...layout.footerLine2Keys, ...layout.footerLine3Keys];
+	if (known.includes(FOOTER_TOKENS_KEY) || layout.footerHiddenKeys.includes(FOOTER_TOKENS_KEY)) {
+		return layout;
+	}
+	return { ...layout, footerLine1Keys: [...layout.footerLine1Keys, FOOTER_TOKENS_KEY] };
 }
 
 /** 跨行去重（line1 → line2 → line3）；旧配置补上内置芯片。 */

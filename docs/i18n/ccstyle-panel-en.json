@@ -123,6 +123,9 @@
   "footerTokenRateTtft.label": "Token rate TTFT",
   "footerTokenRateTtft.desc.on": "Append time to first token, e.g. (TTFT: 812ms) or (TTFT: 1.2s). Turn off to show the rate only.",
   "footerTokenRateTtft.desc.off": "Time to first token hidden. The rate chip shows tok/s only.",
+  "footerTotalTokens.label": "Session tokens",
+  "footerTotalTokens.desc.on": "Show session token totals after the cost with icons: Σ total · ↑ input (upload) · ↓ output (download) · cache glyph (read + write).",
+  "footerTotalTokens.desc.off": "Session total tokens chip hidden.",
   "tokenSpeedDisplay.label": "Token speed display",
   "tokenSpeedDisplay.desc.legacy": "Classic chip: avg/live label + tok/s, TTFT per its own toggle.",
   "tokenSpeedDisplay.desc.tps": "Rate only, e.g. 42 tok/s, tier-colored by the thresholds below.",
@@ -174,5 +177,6 @@
   "language.label": "Language",
   "language.desc": "Panel display language. Takes effect immediately for newly rendered text.",
   "value.on": "on",
-  "value.off": "off"
+  "value.off": "off",
+  "footerChip.totalTokens": "Session total tokens"
 }

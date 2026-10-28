@@ -32,10 +32,10 @@ Run `/reload` after installation.
 | Claude Code UI              | Tool summaries, expand/collapse, rich edit/write diffs, and `on` / `compact` / `off` modes                                                   | `/ccstyle`                                      |
 | Markdown enhancements       | Mermaid dialects and circled-number conversion                                                                                               | Automatic; turn off with `enableMarkdownEnhance: false` |
 | Fullscreen mode             | Tool card/group expand and collapse on click, previews, hover highlight, and a back-to-bottom button                                         | `TUIMODE=fullscreen` or `--tui-mode fullscreen` |
-| Settings panel              | `Style / Features / UI / Diff / Thinking / Footer` tabs. The Footer tab edits tokenSpeed visually (display mode / icon / count strategy / end-of-stream behavior / sliding window / tier thresholds / tier colors; provider overrides read-only); the Features tab toggles agentSummary segments plus done-date and italic | `/ccstyle`                                      |
+| Settings panel              | `Style / Features / UI / Diff / Thinking / Footer / Token Speed` tabs. The Token Speed tab edits tokenSpeed visually (display mode / icon / count strategy / end-of-stream behavior / sliding window / tier thresholds / tier colors; provider overrides read-only); the Features tab toggles agentSummary segments plus done-date and italic | `/ccstyle`                                      |
 | Context inspection          | Usage breakdown and previews for the system prompt, memory, skills, tools definition, and messages                                           | `/context`                                      |
 | Session/Subagent references | Search and inject effective context from previous Sessions or existing SubAgents                                                             | `@`                                             |
-| Status bar                  | Shows model, context, cache, cost, and git; also works with `@narumitw/pi-usage` for live quota. Output rate is tier-colored via `tokenSpeed`. Git/cache Nerd Font icons can be turned off | `/ccstyle`                                      |
+| Status bar                  | Shows model, context, cache, cost, session token totals (`Σ 2.1M ↑ 1.1M ↓ 45k 󰆼 980k`: total/input/output/cache), and git; also works with `@narumitw/pi-usage` for live quota. Output rate is tier-colored via `tokenSpeed`. Git/cache Nerd Font icons can be turned off | `/ccstyle`                                      |
 | Theme                       | Bundled CC Dark and CC Light themes                                                                                                          | `/settings` → Theme                             |
 
 Renderer snapshots for `on` / `compact` modes: [default](./docs/tool-render-examples-default.md) · [compact](./docs/tool-render-examples-compact.md)
@@ -88,12 +88,14 @@ Renderer snapshots for `on` / `compact` modes: [default](./docs/tool-render-exam
   "footerTokenRate": true,                 // output rate chip; false hides it
   "footerTokenRateMode": "average",        // average: whole-prompt avg; live: trailing 1s rate
   "footerTokenRateTtft": true,             // append TTFT to the rate chip; false shows tok/s only
+  "footerTotalTokens": true,               // session token chip (Σ total · ↑ in · ↓ out · cache glyph); false hides it
+                                           // effect: Σ 2.1M ↑ 1.1M ↓ 45k 󰆼 980k (session-wide, includes subagent usage)
   "footerCurrency": "USD",                 // display currency for the footer cost
   "footerCurrencyRate": null,              // display units per 1 cost unit; null changes the symbol only
   "footerNerdIcons": true,                 // Nerd Font glyphs for git/cache; false = plain text
   "footerGitStatsMode": "working",         // working (default): uncommitted; branch: cumulative net changes
   "footerHiddenKeys": [],                  // hidden chip keys
-  "footerLine1Keys": ["cwd", "pi-usage", "git", "model", "context", "cache", "rate"], // chip order per line; builtins and plugins share one layout
+  "footerLine1Keys": ["cwd", "pi-usage", "git", "model", "context", "cache", "rate", "total-tokens"], // chip order per line; builtins and plugins share one layout
   "footerLine2Keys": [],       // cwd: directory and session; git: branch and changes. Either can move to any line
   "footerLine3Keys": [],                   // painted only when a chip is visible
 
@@ -122,15 +124,15 @@ Renderer snapshots for `on` / `compact` modes: [default](./docs/tool-render-exam
     },
     "providerOverrides": {                   // per-provider overrides: keys are exact provider ids of the active model; the block is deep-merged over the base (thresholds whole-block, colors/displayColors per color; overridable: thresholds/colors/display/displayColors/countStrategy/endTpsBehavior/slidingWindow/icon/formatDuration)
       "anthropic": { "display": "full", "slidingWindow": 2000 }
-    }
-  }
+    },
+  },
 
   // agent-summary (turn summary line)
   "agentSummaryKeys": ["duration", "tokens", "rate", "cache-hit", "turns", "tools", "done"], // segment order; options: duration/tokens/cache/cache-hit/rate/reasoning/turns/model/tools/cost/failed/done
   "agentSummarySep": " · ",                // segment separator
   "agentSummaryIcons": true,               // emoji icons; false = plain text
   "agentSummaryMinTools": 0,               // min tool calls before showing; 0 = show whenever there is content, 2 = legacy behavior
-  "agentSummaryDoneDate": true             // done segment with date: false = "done 19:24"
+  "agentSummaryDoneDate": true,            // done segment with date: false = "done 19:24"
   "agentSummaryItalic": false              // italic summary line (Claude Code style); false = upright
 }
 ```

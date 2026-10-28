@@ -32,10 +32,10 @@ pi install git:github.com/KAI-EXT/pi-cc-extensions
 | Claude Code UI        | 工具摘要、折叠展开、rich edit/write diff，以及`on` / `compact` / `off` 三种模式 | `/ccstyle`                                      |
 | Markdown 增强         | Mermaid 方言渲染、圈数字转半角括号                                                         | 自动生效；`enableMarkdownEnhance: false` 关闭   |
 | Fullscreen mode       | 工具卡/group 单击展开与收起、预览、hover 高亮、回到底部按钮                 | `TUIMODE=fullscreen` 或 `--tui-mode fullscreen` |
-| 配置面板              | `Style / Features / UI / Diff / Thinking / Footer` 六页签；Footer 页签含 tokenSpeed 可视化编辑（显示模式/图标/计数策略/结束行为/滑动窗口/四档阈值/四档色，provider 覆盖只读展示），Features 页签含 agentSummary 段开关与日期/斜体切换 | `/ccstyle`                                      |
+| 配置面板              | `Style / Features / UI / Diff / Thinking / Footer / Token Speed` 七页签；Token Speed 页签含 tokenSpeed 可视化编辑（显示模式/图标/计数策略/结束行为/滑动窗口/四档阈值/四档色，provider 覆盖只读展示），Features 页签含 agentSummary 段开关与日期/斜体切换 | `/ccstyle`                                      |
 | 上下文检查            | 查看上下文占用，并预览 System prompt、Memory、Skills、Tools definition 和消息内容 | `/context`                                      |
 | Session/Subagent 引用 | 搜索并注入历史 Session 或会话中已有 SubAgent 的有效上下文                             | `@`                                             |
-| 状态栏                | 显示：模型、上下文、缓存、费用、git并适配 @narumitw/pi-usage 实时显示额度；输出速率按速分档着色（tokenSpeed）；git/缓存图标可关 Nerd Font | `/ccstyle`                              |
+| 状态栏                | 显示：模型、上下文、缓存、费用、会话 token 统计（`Σ 2.1M ↑ 1.1M ↓ 45k 󰆼 980k`：总量/输入/输出/缓存）、git，并适配 @narumitw/pi-usage 实时显示额度；输出速率按速分档着色（tokenSpeed）；git/缓存图标可关 Nerd Font | `/ccstyle`                              |
 | 主题                  | 随包提供内置 CC Dark、CC Light 主题                                             | `/settings` → Theme                             |
 
 `on` / `compact` 两种模式的渲染样例：[默认模式](./docs/tool-render-examples-default.md) · [紧凑模式](./docs/tool-render-examples-compact.md)
@@ -88,12 +88,14 @@ pi install git:github.com/KAI-EXT/pi-cc-extensions
   "footerTokenRate": true,                 // 输出速率芯片；false 隐藏
   "footerTokenRateMode": "average",        // average：整段指令平均；live：最近 1 秒瞬时（live 模式带 live 前缀）
   "footerTokenRateTtft": true,             // 速率芯片是否带 TTFT；false 只显示 tok/s
+  "footerTotalTokens": true,               // 会话 token 芯片（Σ 总量 · ↑ 输入 · ↓ 输出 · 缓存图标）；false 隐藏
+                                           // 效果：Σ 2.1M ↑ 1.1M ↓ 45k 󰆼 980k（会话累计，含子代理用量）
   "footerCurrency": "USD",                 // 底栏费用的显示币种
   "footerCurrencyRate": null,              // 1 单位费用换成多少显示币种；null 只换符号、不乘倍率
   "footerNerdIcons": true,                 // git/缓存用 Nerd Font 图标；false 为纯文本
   "footerGitStatsMode": "working",         // working（默认）：未提交改动；branch：分支累计净改动
   "footerHiddenKeys": [],                  // 隐藏的芯片 key
-  "footerLine1Keys": ["cwd", "pi-usage", "git", "model", "context", "cache", "rate"], // 每行芯片顺序；内置项与插件同一套排布
+  "footerLine1Keys": ["cwd", "pi-usage", "git", "model", "context", "cache", "rate", "total-tokens"], // 每行芯片顺序；内置项与插件同一套排布
   "footerLine2Keys": [],                   // cwd：目录和会话名；git：分支和改动。可换到任意行
   "footerLine3Keys": [],                   // 有可见芯片才占行
 
@@ -122,15 +124,15 @@ pi install git:github.com/KAI-EXT/pi-cc-extensions
     },
     "providerOverrides": {                   // 按 provider 覆盖：键为活动模型 provider 精确串，覆盖块与 base 深合并（thresholds 整块，colors/displayColors 逐色；可覆盖 thresholds/colors/display/displayColors/countStrategy/endTpsBehavior/slidingWindow/icon/formatDuration）
       "anthropic": { "display": "full", "slidingWindow": 2000 }
-    }
-  }
+    },
+  },
 
   // agent-summary（回合摘要行）
   "agentSummaryKeys": ["duration", "tokens", "rate", "cache-hit", "turns", "tools", "done"], // 段顺序与开关；可选：duration/tokens/cache/cache-hit/rate/reasoning/turns/model/tools/cost/failed/done
   "agentSummarySep": " · ",                // 段分隔符
   "agentSummaryIcons": true,               // emoji 图标；false 为纯文本
   "agentSummaryMinTools": 0,               // 触发显示的最小工具数；0 = 有任意内容就显示，2 = 恢复旧行为
-  "agentSummaryDoneDate": true             // done 段是否带日期：false = "done 19:24"
+  "agentSummaryDoneDate": true,             // done 段是否带日期：false = "done 19:24"
   "agentSummaryItalic": false              // 整行斜体（Claude Code 原版样式）；false 直体
 }
 ```

@@ -131,6 +131,7 @@ const FOOTER_CHIP_LABEL_KEYS: Record<string, LocaleKey> = {
 	cost: "footerChip.cost",
 	cwd: "footerChip.cwd",
 	git: "footerChip.git",
+	"total-tokens": "footerChip.totalTokens",
 };
 
 function footerChipDescriptionLocalized(key: string, liveText: string): string {
@@ -1056,6 +1057,15 @@ export async function showCcstylePanel(
 			currentValue: config.footerTokenRateTtft ? "on" : "off",
 			values: ["on", "off"],
 		};
+		const footerTotalTokensSetting = {
+			id: "footerTotalTokens",
+			label: t("footerTotalTokens.label"),
+			description: config.footerTotalTokens
+				? t("footerTotalTokens.desc.on")
+				: t("footerTotalTokens.desc.off"),
+			currentValue: config.footerTotalTokens ? "on" : "off",
+			values: ["on", "off"],
+		};
 		// tokenSpeed 编辑行：display/colors/icon 走渲染期读 config 的现有机制即时生效；
 		// countStrategy/endTpsBehavior/slidingWindow 由 onSettingChange 里 setTokenSpeedOptions
 		// 重注入引擎，同样即时（providerOverrides 命中时按活动模型 provider 解析）。
@@ -1342,6 +1352,12 @@ export async function showCcstylePanel(
 			);
 		});
 		retranslate(() => {
+			footerTotalTokensSetting.label = t("footerTotalTokens.label");
+			footerTotalTokensSetting.description = config.footerTotalTokens
+				? t("footerTotalTokens.desc.on")
+				: t("footerTotalTokens.desc.off");
+		});
+		retranslate(() => {
 			pluginChipsSetting.label = t("footerPluginChips.label");
 			pluginChipsSetting.description = pluginChipsDescription();
 		});
@@ -1418,6 +1434,17 @@ export async function showCcstylePanel(
 				updateConfig({ footerTokenRateTtft: enabled });
 				footerTokenRateTtftSetting.currentValue = enabled ? "on" : "off";
 				footerTokenRateTtftSetting.description = footerTokenRateTtftDescription(enabled);
+				ctx.ui.notify(t("notify.updated", { id, value }), "info");
+				return;
+			}
+			if (id === "footerTotalTokens") {
+				const enabled = value === "on";
+				updateConfig({ footerTotalTokens: enabled });
+				footerTotalTokensSetting.currentValue = enabled ? "on" : "off";
+				footerTotalTokensSetting.description = enabled
+					? t("footerTotalTokens.desc.on")
+					: t("footerTotalTokens.desc.off");
+				refreshFooterGitStats();
 				ctx.ui.notify(t("notify.updated", { id, value }), "info");
 				return;
 			}
@@ -1677,6 +1704,7 @@ export async function showCcstylePanel(
 					footerTokenRateSetting,
 					footerTokenRateModeSetting,
 					footerTokenRateTtftSetting,
+					footerTotalTokensSetting,
 					footerCurrencySetting,
 					footerCurrencyRateSetting,
 					footerNerdIconsSetting,

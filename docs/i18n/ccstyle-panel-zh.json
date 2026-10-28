@@ -123,6 +123,9 @@
   "footerTokenRateTtft.label": "Token 速率 TTFT",
   "footerTokenRateTtft.desc.on": "附加首 Token 时间，例如 (TTFT: 812ms) 或 (TTFT: 1.2s)。关闭则仅显示速率。",
   "footerTokenRateTtft.desc.off": "隐藏首 Token 时间。速率区块仅显示 tok/s。",
+  "footerTotalTokens.label": "会话 Token 总量",
+  "footerTotalTokens.desc.on": "在成本之后以图标显示全会话 Token 统计：Σ 总量 · ↑ 输入（上传）· ↓ 输出（下载）· 缓存图标（读 + 写）。",
+  "footerTotalTokens.desc.off": "会话 Token 总量芯片已隐藏。",
   "tokenSpeedDisplay.label": "Token 速度显示",
   "tokenSpeedDisplay.desc.legacy": "经典区块：avg/live 标签 + tok/s，TTFT 由独立开关控制。",
   "tokenSpeedDisplay.desc.tps": "仅显示速率，例如 42 tok/s，按下方阈值为不同档位着色。",
@@ -174,5 +177,6 @@
   "language.label": "语言",
   "language.desc": "面板显示语言。对之后新渲染的文本立即生效。",
   "value.on": "on",
-  "value.off": "off"
+  "value.off": "off",
+  "footerChip.totalTokens": "会话 Token 总量"
 }

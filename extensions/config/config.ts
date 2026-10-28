@@ -94,6 +94,8 @@ export type Config = {
 	enableCustomFooter: boolean;
 	/** footer 输出速率芯片。关则不显示。 */
 	footerTokenRate: boolean;
+	/** footer 会话累计 token 芯片（provider totalTokens：input+output+cacheRead+cacheWrite）。关则不显示。 */
+	footerTotalTokens: boolean;
 	/** average：整段指令墙钟平均；live：最近 1 秒瞬时速率，空档回退平均。 */
 	footerTokenRateMode: FooterTokenRateMode;
 	/** 速率芯片是否带 TTFT。关则只显示速率。 */
@@ -211,6 +213,7 @@ export const DEFAULT_CONFIG: Config = {
 	enableEditorPrefix: true,
 	enableCustomFooter: true,
 	footerTokenRate: true,
+	footerTotalTokens: true,
 	footerTokenRateMode: "average",
 	footerTokenRateTtft: true,
 	footerCurrency: "USD",
@@ -371,6 +374,7 @@ export function normalizeConfig(input: unknown): Config {
 		enableEditorPrefix: (source.enableEditorPrefix ?? source.enableInputPrompt) !== false, // 兼容旧配置键
 		enableCustomFooter: source.enableCustomFooter !== false,
 		footerTokenRate: source.footerTokenRate !== false,
+		footerTotalTokens: source.footerTotalTokens !== false,
 		footerTokenRateMode: pickEnum(
 			source.footerTokenRateMode,
 			FOOTER_TOKEN_RATE_MODES,
@@ -507,6 +511,7 @@ export function formatConfigStatus(source: Config = config): string {
 		`editorPrefix=${source.enableEditorPrefix ? "on" : "off"}`,
 		`footer=${source.enableCustomFooter ? "on" : "off"}`,
 		`footerTokenRate=${source.footerTokenRate ? "on" : "off"}`,
+		`footerTotalTokens=${source.footerTotalTokens ? "on" : "off"}`,
 		`footerTokenRateMode=${source.footerTokenRateMode}`,
 		`footerTokenRateTtft=${source.footerTokenRateTtft ? "on" : "off"}`,
 		`footerCurrency=${source.footerCurrency}`,

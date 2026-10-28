@@ -31,7 +31,9 @@ import {
 	FOOTER_GIT_KEY,
 	FOOTER_MODEL_KEY,
 	FOOTER_RATE_KEY,
+	FOOTER_TOKENS_KEY,
 	PI_USAGE_KEY,
+	ensureFooterTokensKey,
 	isBuiltinFooterKey,
 	isSkippedFooterStatusKey,
 	resolveFooterChipLayout,
@@ -192,12 +194,13 @@ function pluginTextsForRender(localUsageChip: string): Map<string, string> {
 }
 
 function layoutFromConfig(): FooterChipLayout {
-	return {
+	// tokens 是后加的内置芯片：旧配置补齐，升级后默认可见（用户隐藏过则不补）。
+	return ensureFooterTokensKey({
 		footerHiddenKeys: config.footerHiddenKeys,
 		footerLine1Keys: config.footerLine1Keys,
 		footerLine2Keys: config.footerLine2Keys,
 		footerLine3Keys: config.footerLine3Keys,
-	};
+	});
 }
 
 let piUsageMod: any | null | undefined;
@@ -398,7 +401,14 @@ const createCustomFooterFactory =
 		let statsMemoKey = "";
 		let statsMemoAt = 0;
 		let statsMemo:
-			| { contextUsage: ReturnType<typeof ctx.getContextUsage>; cost: number; cachePct: number }
+			| {
+					contextUsage: ReturnType<typeof ctx.getContextUsage>;
+					cost: number;
+					cachePct: number;
+					sessionInput: number;
+					sessionOutput: number;
+					sessionCache: number;
+			  }
 			| undefined;
 		const sessionStats = () => {
 			const model = ctx.model;
@@ -411,19 +421,47 @@ const createCustomFooterFactory =
 				return statsMemo;
 			}
 			let cost = 0;
+			let sessionInput = 0;
+			let sessionOutput = 0;
+			let sessionCache = 0;
+			// 会话累计 token 分项：input / output / cache（cacheRead + cacheWrite，provider 口径）。
+			const addUsage = (usage?: {
+				input: number;
+				output: number;
+				cacheRead: number;
+				cacheWrite: number;
+			}) => {
+				if (!usage) return;
+				sessionInput += usage.input || 0;
+				sessionOutput += usage.output || 0;
+				sessionCache += (usage.cacheRead || 0) + (usage.cacheWrite || 0);
+			};
 			for (const entry of ctx.sessionManager.getEntries()) {
 				if (entry.type === "message") {
 					const m = entry.message;
-					if (m.role === "assistant") cost += m.usage?.cost?.total || 0;
-					else if (m.role === "toolResult" && m.usage) cost += m.usage.cost?.total || 0;
+					if (m.role === "assistant") {
+						cost += m.usage?.cost?.total || 0;
+						addUsage(m.usage);
+					} else if (m.role === "toolResult" && m.usage) {
+						cost += m.usage.cost?.total || 0;
+						addUsage(m.usage);
+					}
 				} else if (
 					(entry.type === "branch_summary" || entry.type === "compaction") &&
 					entry.usage
 				) {
 					cost += entry.usage.cost?.total || 0;
+					addUsage(entry.usage);
 				}
 			}
-			statsMemo = { contextUsage: ctx.getContextUsage(), cost, cachePct: getCachePct() };
+			statsMemo = {
+				contextUsage: ctx.getContextUsage(),
+				cost,
+				cachePct: getCachePct(),
+				sessionInput,
+				sessionOutput,
+				sessionCache,
+			};
 			statsMemoKey = key;
 			statsMemoAt = performance.now();
 			return statsMemo;
@@ -431,7 +469,8 @@ const createCustomFooterFactory =
 
 		const render = (width: number): string[] => {
 			const model = ctx.model;
-			const { contextUsage, cost, cachePct } = sessionStats();
+			const { contextUsage, cost, cachePct, sessionInput, sessionOutput, sessionCache } =
+				sessionStats();
 			const contextWindow = contextUsage?.contextWindow ?? model?.contextWindow ?? 0;
 			const percent = contextUsage?.percent;
 
@@ -495,6 +534,18 @@ const createCustomFooterFactory =
 			const costChip = costLabel
 				? theme.fg("dim", costLabel) + (usingSubscription ? theme.fg("warning", " sub") : "")
 				: "";
+			// 会话累计 token：总量（Σ）+ 分项，全部用图标：↑ 输入（上传）、↓ 输出（下载）、
+			// 缓存复用 Nerd Font 数据库图标（footerNerdIcons 关闭时回退 cache 文字）。
+			// footerTotalTokens 关闭时隐藏；会话尚无用量时整体隐藏，避免出现一串空值。
+			const sessionTotal = sessionInput + sessionOutput + sessionCache;
+			const cacheGlyph = glyphs.cache || "cache";
+			const tokensChip =
+				config.footerTotalTokens && sessionTotal > 0
+					? theme.fg(
+							"dim",
+							`Σ ${fmt(sessionTotal)} ↑ ${fmt(sessionInput)} ↓ ${fmt(sessionOutput)} ${cacheGlyph} ${fmt(sessionCache)}`,
+						)
+					: "";
 
 			const gitColor = theme.getThinkingBorderColor("medium");
 			let place = theme.fg("accent", cwdLabel);
@@ -532,6 +583,7 @@ const createCustomFooterFactory =
 				[FOOTER_CACHE_KEY, cacheLabel ? theme.fg("dim", cacheLabel) : ""],
 				[FOOTER_RATE_KEY, rateLabel ? theme.fg("dim", `${rateIcon}${rateLabel}`) : ""],
 				[FOOTER_COST_KEY, costChip],
+				[FOOTER_TOKENS_KEY, tokensChip],
 				[FOOTER_CWD_KEY, place],
 				[FOOTER_GIT_KEY, gitChip],
 			]);
