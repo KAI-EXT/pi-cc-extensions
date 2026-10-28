@@ -66,8 +66,8 @@ function rowNav(panel: Panel, total: number) {
 	};
 }
 
-/** Footer 页签行数：9 条原有 + 14 条 tokenSpeed。 */
-const FOOTER_ROWS = 23;
+/** Token Speed 页签行数（tokenSpeed 配置族 14 行）。 */
+const TOKEN_SPEED_ROWS = 14;
 /** Features 页签行数：7 条原有 + 3 条 agentSummary。 */
 const FEATURE_ROWS = 10;
 
@@ -75,12 +75,12 @@ function resetTokenSpeed(): void {
 	config.tokenSpeed = normalizeTokenSpeed(undefined);
 }
 
-test("Footer 页签 tokenSpeed display 行循环写回 config 并持久化", async () => {
+test("Token Speed 页签 display 行循环写回 config 并持久化", async () => {
 	resetTokenSpeed();
 	assert.equal(config.tokenSpeed.display, "legacy");
 	const { panel, notices, close } = await openPanel();
-	sendTabs(panel, 5);
-	rowNav(panel, FOOTER_ROWS)(4); // Token speed display
+	sendTabs(panel, 6);
+	rowNav(panel, TOKEN_SPEED_ROWS)(0); // Token speed display
 	panel.handleInput("\r");
 	assert.equal(config.tokenSpeed.display, "tps");
 	assert.equal(
@@ -95,14 +95,14 @@ test("Footer 页签 tokenSpeed display 行循环写回 config 并持久化", asy
 	}
 	panel.handleInput("\x1b");
 	await close;
-	assert.ok(notices.includes("Updated tokenSpeedDisplay: tps"));
+	assert.ok(notices.includes("已更新 tokenSpeedDisplay：tps"));
 });
 
 test("Token speed icon 行 none 与图标互转（none ↔ 空串）", async () => {
 	resetTokenSpeed();
 	const { panel, close } = await openPanel();
-	sendTabs(panel, 5);
-	rowNav(panel, FOOTER_ROWS)(5); // Token speed icon
+	sendTabs(panel, 6);
+	rowNav(panel, TOKEN_SPEED_ROWS)(1); // Token speed icon
 	panel.handleInput(" ");
 	assert.equal(config.tokenSpeed.icon, "🔥");
 	// 循环完 🚀 回到 none，配置回空串
@@ -115,15 +115,15 @@ test("Token speed icon 行 none 与图标互转（none ↔ 空串）", async () 
 test("countStrategy / endTpsBehavior / slidingWindow 行循环写回", async () => {
 	resetTokenSpeed();
 	const { panel, close } = await openPanel();
-	sendTabs(panel, 5);
-	const nav = rowNav(panel, FOOTER_ROWS);
-	nav(6); // Token count strategy
+	sendTabs(panel, 6);
+	const nav = rowNav(panel, TOKEN_SPEED_ROWS);
+	nav(2); // Token count strategy
 	panel.handleInput(" ");
 	assert.equal(config.tokenSpeed.countStrategy, "direct");
-	nav(7); // End-of-stream TPS
+	nav(3); // End-of-stream TPS
 	panel.handleInput(" ");
 	assert.equal(config.tokenSpeed.endTpsBehavior, "last");
-	nav(8); // Sliding window ms
+	nav(4); // Sliding window ms
 	panel.handleInput(" ");
 	assert.equal(config.tokenSpeed.slidingWindow, 3000);
 	panel.handleInput("\x1b");
@@ -134,9 +134,9 @@ test("阈值行预设循环写回并自动收敛保持严格升序", async () =>
 	resetTokenSpeed();
 	config.tokenSpeed.thresholds = { slow: 10, medium: 20, fast: 30, blazing: 40 };
 	const { panel, close } = await openPanel();
-	sendTabs(panel, 5);
-	const nav = rowNav(panel, FOOTER_ROWS);
-	nav(12); // Threshold blazing
+	sendTabs(panel, 6);
+	const nav = rowNav(panel, TOKEN_SPEED_ROWS);
+	nav(8); // Threshold blazing
 	panel.handleInput(" "); // 40 → 45
 	assert.deepEqual(config.tokenSpeed.thresholds, {
 		slow: 10,
@@ -144,13 +144,13 @@ test("阈值行预设循环写回并自动收敛保持严格升序", async () =>
 		fast: 30,
 		blazing: 45,
 	});
-	nav(11); // Threshold fast
+	nav(7); // Threshold fast
 	panel.handleInput(" "); // 30 → 40
 	panel.handleInput(" "); // → 50
 	panel.handleInput(" "); // → 60
 	panel.handleInput(" "); // → 20，低于 medium 收敛为 21
 	assert.equal(config.tokenSpeed.thresholds.fast, 21);
-	nav(9); // Threshold slow
+	nav(5); // Threshold slow
 	panel.handleInput(" "); // 10 → 15
 	panel.handleInput(" "); // 15 → 20，超过 medium-1 收敛为 19
 	assert.equal(config.tokenSpeed.thresholds.slow, 19);
@@ -163,12 +163,12 @@ test("颜色行预设循环写回，预设外自定义色从首个预设继续",
 	resetTokenSpeed();
 	config.tokenSpeed.colors.medium = "#123abc";
 	const { panel, close } = await openPanel();
-	sendTabs(panel, 5);
-	const nav = rowNav(panel, FOOTER_ROWS);
-	nav(13); // Slow tier color，默认 #ff4444
+	sendTabs(panel, 6);
+	const nav = rowNav(panel, TOKEN_SPEED_ROWS);
+	nav(9); // Slow tier color，默认 #ff4444
 	panel.handleInput(" ");
 	assert.equal(config.tokenSpeed.colors.slow, "#ff8844");
-	nav(14); // Medium tier color，自定义色不在预设里
+	nav(10); // Medium tier color，自定义色不在预设里
 	panel.handleInput(" ");
 	assert.equal(config.tokenSpeed.colors.medium, "#ff4444");
 	panel.handleInput("\x1b");
@@ -179,8 +179,8 @@ test("Provider overrides 行只读：Enter/Space 不改配置", async () => {
 	resetTokenSpeed();
 	config.tokenSpeed.providerOverrides = { openai: { display: "tps", slidingWindow: 2000 } };
 	const { panel, close } = await openPanel();
-	sendTabs(panel, 5);
-	rowNav(panel, FOOTER_ROWS)(17); // Provider overrides
+	sendTabs(panel, 6);
+	rowNav(panel, TOKEN_SPEED_ROWS)(13); // Provider overrides
 	const before = JSON.stringify(config.tokenSpeed.providerOverrides);
 	panel.handleInput("\r");
 	panel.handleInput(" ");
@@ -252,7 +252,7 @@ test("Summary done date / italic 行切换写回 config", async () => {
 	nav(6); // Summary italic
 	panel.handleInput("\r");
 	assert.equal(config.agentSummaryItalic, true);
-	assert.ok(notices.includes("Updated agentSummaryItalic: on"));
+	assert.ok(notices.includes("已更新 agentSummaryItalic：on"));
 	panel.handleInput("\x1b");
 	await close;
 });

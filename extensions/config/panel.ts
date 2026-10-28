@@ -18,7 +18,6 @@ import {
 	presetFooterCurrencyRate,
 } from "../feature/shell/footer-currency.ts";
 import {
-	footerChipDescription,
 	footerLineOfKey,
 	formatFooterChipSummary,
 	orderedFooterKeys,
@@ -56,6 +55,7 @@ import {
 	FOOTER_TOKEN_RATE_MODES,
 	formatExcludeRenderers,
 	getCompactThinkingConfig,
+	PANEL_LANGUAGES,
 	pickPositiveInt,
 	pickPositiveNumber,
 	pickToolLabelClip,
@@ -71,11 +71,14 @@ import {
 	type DiffViewMode,
 	type FooterGitStatsMode,
 	type FooterTokenRateMode,
+	type PanelLanguage,
 	type ScrollButtonMode,
 	isExcludedRenderer,
 	mergeExcludeRendererCandidates,
 	withExcludeRendererToggle,
 } from "./config.ts";
+import { t, type LocaleKey } from "./i18n/index.ts";
+import { PI_USAGE_KEY, footerChipSource } from "../feature/shell/footer-layout.ts";
 
 /** renderer 注入的渲染副作用，面板自身不触碰渲染状态。 */
 export type CcstylePanelHooks = {
@@ -84,52 +87,68 @@ export type CcstylePanelHooks = {
 };
 
 function modeSettingDescription(mode: CompactStyleMode): string {
-	if (mode === "compact") {
-		return "One summary line per assistant round; edit/write reuse the same Diff preview settings as on.";
-	}
-	if (mode === "off") {
-		return "Pi native tool rendering. Diff options below still apply independently.";
-	}
-	return "Claude Code style with rich edit/write diffs. Tune diff options below.";
+	if (mode === "compact") return t("mode.desc.compact");
+	if (mode === "off") return t("mode.desc.off");
+	return t("mode.desc.on");
 }
 
 function excludeRenderersDescription(names: readonly string[]): string {
 	return names.length === 0
-		? "No tools excluded. Enter to toggle common tools."
-		: `Native renderer for: ${names.join(", ")}. Enter to toggle.`;
+		? t("excludeRenderers.desc.none")
+		: t("excludeRenderers.desc.some", { names: names.join(", ") });
 }
 
 function customFooterDescription(enabled: boolean): string {
-	if (!enabled) return "Pi native footer restored. Chip layout below still applies when turned on.";
-	return "Custom status bar. Model, context, cache, rate, cost, cwd, git, and plugin chips share one layout.";
+	return enabled ? t("enableCustomFooter.desc.on") : t("enableCustomFooter.desc.off");
 }
 
 function footerTokenRateDescription(enabled: boolean): string {
-	return enabled
-		? "Output rate chip after the cache hit rate. Turn off to hide it."
-		: "Output rate chip hidden.";
+	return enabled ? t("footerTokenRate.desc.on") : t("footerTokenRate.desc.off");
 }
 
 function footerTokenRateModeDescription(mode: FooterTokenRateMode): string {
 	return mode === "live"
-		? "Sliding 1s rate while generating (live). Tool waits are excluded. Falls back to the run average between chunks and after the prompt."
-		: "Average over the whole user prompt (avg), including tool waits. Stays until the next prompt.";
+		? t("footerTokenRateMode.desc.live")
+		: t("footerTokenRateMode.desc.average");
 }
 
 function footerTokenRateTtftDescription(enabled: boolean): string {
-	return enabled
-		? "Append time to first token, e.g. (TTFT: 812ms) or (TTFT: 1.2s). Turn off to show the rate only."
-		: "Time to first token hidden. The rate chip shows tok/s only.";
+	return enabled ? t("footerTokenRateTtft.desc.on") : t("footerTokenRateTtft.desc.off");
 }
 
 function footerGitStatsDescription(mode: FooterGitStatsMode): string {
 	return mode === "branch"
-		? "Net changes since the merge base, including uncommitted edits. Base: origin/HEAD, then local main/master. Untracked files excluded; unavailable stats hidden."
-		: "Uncommitted net changes relative to HEAD (default). Includes staged and unstaged edits; excludes untracked files.";
+		? t("footerGitStatsMode.desc.branch")
+		: t("footerGitStatsMode.desc.working");
+}
+
+/** Footer chips 子面板描述：内置芯片标签走 i18n，其余用来源 key 模板（避免 footer-layout → i18n 循环依赖）。 */
+const FOOTER_CHIP_LABEL_KEYS: Record<string, LocaleKey> = {
+	model: "footerChip.model",
+	context: "footerChip.context",
+	cache: "footerChip.cache",
+	rate: "footerChip.rate",
+	cost: "footerChip.cost",
+	cwd: "footerChip.cwd",
+	git: "footerChip.git",
+};
+
+function footerChipDescriptionLocalized(key: string, liveText: string): string {
+	const labelKey = FOOTER_CHIP_LABEL_KEYS[key];
+	const builtin = labelKey ? t(labelKey) : undefined;
+	if (builtin) {
+		const live = liveText.trim();
+		return live ? `${builtin} · ${live}` : builtin;
+	}
+	const source = footerChipSource(key);
+	const live = liveText.trim();
+	if (live) return t("footerChip.from", { live, source });
+	if (key === PI_USAGE_KEY) return t("footerChip.piUsageNoText", { source });
+	return t("footerChip.fromInactive", { source });
 }
 
 function pluginChipsDescription(): string {
-	return `Arrange footer chips: ${formatFooterChipSummary(config)}. Enter to edit.`;
+	return t("footerPluginChips.desc", { summary: formatFooterChipSummary(config) });
 }
 
 function footerLayoutFromConfig(): FooterChipLayout {
@@ -161,8 +180,10 @@ function footerChipItem(
 	return {
 		id: key,
 		label: key,
-		description: footerChipDescription(key, live),
-		currentValue: hidden ? `line${line} · hidden` : `line${line}`,
+		description: footerChipDescriptionLocalized(key, live),
+		currentValue: hidden
+			? t("footerChips.item.value.hidden", { n: line })
+			: t("footerChips.item.value.line", { n: line }),
 	};
 }
 
@@ -209,7 +230,8 @@ function buildFooterChipsSubmenu(
 	};
 
 	return {
-		render: (width: number) => list.render(width),
+		// 过滤 SettingsList 内置英文 hint，与主面板口径一致（底部提示由嵌套方渲染）。
+		render: (width: number) => stripSettingsListHint(list.render(width)),
 		invalidate: () => list.invalidate(),
 		handleInput: (data: string) => {
 			if (matchesKey(data, "left")) {
@@ -238,29 +260,29 @@ function buildFooterChipsSubmenu(
 }
 
 function diffViewModeDescription(mode: DiffViewMode): string {
-	if (mode === "split") return "Force side-by-side diff when width allows; otherwise unified.";
-	if (mode === "unified") return "Always render a single unified diff column.";
-	return "Auto: split when terminal is wide enough, otherwise unified.";
+	if (mode === "split") return t("diffViewMode.desc.split");
+	if (mode === "unified") return t("diffViewMode.desc.unified");
+	return t("diffViewMode.desc.auto");
 }
 
 function diffIndicatorDescription(mode: DiffIndicatorMode): string {
-	if (mode === "classic") return "Classic +/- gutters on changed lines.";
-	if (mode === "none") return "No change indicators; rely on color alone.";
-	return "Vertical bar indicators on changed lines (default).";
+	if (mode === "classic") return t("diffIndicatorMode.desc.classic");
+	if (mode === "none") return t("diffIndicatorMode.desc.none");
+	return t("diffIndicatorMode.desc.bars");
 }
 
 /** 额外功能开关项：on/off 二值，描述随状态切换；切换后需重启生效。 */
 function featureToggleSetting(
 	id: string,
-	label: string,
-	onDescription: string,
-	offDescription: string,
+	labelKey: LocaleKey,
+	onKey: LocaleKey,
+	offKey: LocaleKey,
 	current: boolean,
 ) {
 	const setting = {
 		id,
-		label,
-		description: current ? onDescription : offDescription,
+		label: t(labelKey),
+		description: t(current ? onKey : offKey),
 		currentValue: current ? "on" : "off",
 		values: ["on", "off"],
 	};
@@ -268,7 +290,12 @@ function featureToggleSetting(
 		setting,
 		apply(on: boolean): void {
 			setting.currentValue = on ? "on" : "off";
-			setting.description = on ? onDescription : offDescription;
+			setting.description = t(on ? onKey : offKey);
+		},
+		/** 语言切换后重算本行文案（label + 随当前状态的描述）。 */
+		retranslate(): void {
+			setting.label = t(labelKey);
+			setting.description = t(setting.currentValue === "on" ? onKey : offKey);
 		},
 	};
 }
@@ -286,7 +313,7 @@ function buildExcludeRenderersSubmenu(
 	const items = candidates.map((name) => ({
 		id: name,
 		label: name,
-		description: `Use Pi native renderer for ${name} instead of Claude Code styling.`,
+		description: t("excludeRenderers.item.desc", { name }),
 		currentValue: isExcludedRenderer(name, config.excludeRenderers) ? "exclude" : "style",
 		values: ["style", "exclude"],
 	}));
@@ -308,19 +335,22 @@ function buildExcludeRenderersSubmenu(
 		{ enableSearch: candidates.length > 8 },
 	);
 	return {
-		render: (width: number) => [
-			...list.render(width),
-			"",
-			// Extra hint: Esc returns to the Style section list.
-			truncateToWidth("  Esc back to Style settings", width),
-		],
+		render: (width: number) => {
+			const lines = stripSettingsListHint(list.render(width));
+			lines.push("");
+			lines.push(truncateToWidth(t("hint.excludeFooter"), width));
+			return lines;
+		},
 		invalidate: () => list.invalidate(),
 		handleInput: (data: string) => list.handleInput(data),
 	};
 }
 
 function agentSummaryKeysDescription(keys: readonly string[]): string {
-	return `${keys.length}/${AGENT_SUMMARY_KEY_VALUES.length} segments on. Enter to toggle; at least one stays on.`;
+	return t("agentSummaryKeys.desc", {
+		count: keys.length,
+		total: AGENT_SUMMARY_KEY_VALUES.length,
+	});
 }
 
 /** agentSummaryKeys 段开关子面板：按 canonical 顺序列出全部段，禁用即从数组移除，至少保留一段。 */
@@ -335,7 +365,7 @@ function buildAgentSummaryKeysSubmenu(
 	const items = AGENT_SUMMARY_KEY_VALUES.map((key) => ({
 		id: key,
 		label: key,
-		description: `Show the ${key} segment in the round summary line.`,
+		description: t("agentSummaryKeys.item.desc", { key }),
 		currentValue: config.agentSummaryKeys.includes(key) ? "on" : "off",
 		values: ["on", "off"],
 	}));
@@ -366,11 +396,12 @@ function buildAgentSummaryKeysSubmenu(
 		{ enableSearch: false },
 	);
 	return {
-		render: (width: number) => [
-			...list.render(width),
-			"",
-			truncateToWidth("  Esc back to Features", width),
-		],
+		render: (width: number) => {
+			const lines = stripSettingsListHint(list.render(width));
+			lines.push("");
+			lines.push(truncateToWidth(t("hint.agentSummaryFooter"), width));
+			return lines;
+		},
 		invalidate: () => list.invalidate(),
 		handleInput: (data: string) => list.handleInput(data),
 	};
@@ -430,7 +461,6 @@ function buildValueInputSubmenu(
 		handleInput: (data: string) => input.handleInput(data),
 	};
 }
-
 /** 数值项：预填当前值，空输入取消，非数字留下错误。 */
 function buildNumberInputSubmenu(
 	theme: any,
@@ -440,11 +470,11 @@ function buildNumberInputSubmenu(
 	return buildValueInputSubmenu(
 		theme,
 		{
-			prompt: `  ${setting.label} — custom value:`,
+			prompt: t("input.prompt.number", { label: setting.label }),
 			initial: setting.currentValue,
-			hint: "  Enter to apply · Esc to go back",
+			hint: t("input.hint.generic"),
 			accept: (raw) => (raw === "" ? undefined : Number.isFinite(Number(raw)) ? raw : null),
-			invalid: (raw) => `Invalid number: "${raw}"`,
+			invalid: (raw) => t("input.error.number", { raw }),
 		},
 		closeSubmenu,
 	);
@@ -503,23 +533,23 @@ const tokenSpeedTierId = (prefix: string, tier: TokenSpeedTier): string =>
 	`${prefix}${tier[0].toUpperCase()}${tier.slice(1)}`;
 
 function tokenSpeedDisplayDescription(display: TokenSpeedDisplay): string {
-	if (display === "legacy") return "Classic chip: avg/live label + tok/s, TTFT per its own toggle.";
-	if (display === "tps") return "Rate only, e.g. 42 tok/s, tier-colored by the thresholds below.";
-	if (display === "ttft") return "Rate + time to first token, e.g. 42 tok/s (TTFT: 812ms).";
-	if (display === "stats") return "Rate + tokens and elapsed, e.g. 42 tok/s (150 tok in 6.0s).";
-	return "Rate + tokens, elapsed, and TTFT in one chip.";
+	if (display === "legacy") return t("tokenSpeedDisplay.desc.legacy");
+	if (display === "tps") return t("tokenSpeedDisplay.desc.tps");
+	if (display === "ttft") return t("tokenSpeedDisplay.desc.ttft");
+	if (display === "stats") return t("tokenSpeedDisplay.desc.stats");
+	return t("tokenSpeedDisplay.desc.full");
 }
 
 function tokenSpeedCountStrategyDescription(strategy: TokenSpeedCountStrategy): string {
 	return strategy === "direct"
-		? "Count one token per streamed delta. Predictable on English text; overcounts CJK."
-		: "Estimate tokens from text length (CJK ~1/char, otherwise ~4 chars/token).";
+		? t("tokenSpeedCountStrategy.desc.direct")
+		: t("tokenSpeedCountStrategy.desc.estimate");
 }
 
 function tokenSpeedEndTpsDescription(behavior: TokenSpeedEndTpsBehavior): string {
 	return behavior === "last"
-		? "When streaming ends, keep the last sliding-window value."
-		: "When streaming ends, fall back to the whole-run average.";
+		? t("tokenSpeedEndTpsBehavior.desc.last")
+		: t("tokenSpeedEndTpsBehavior.desc.average");
 }
 
 /**
@@ -577,8 +607,9 @@ function tokenSpeedPatch(
 
 /** Section tabs for /ccstyle — matches Zentui-style "A / B / C" headers. */
 type CcstyleSection = {
-	id: "style" | "diff" | "thinking" | "ui" | "feature" | "footer";
-	label: string;
+	id: "style" | "diff" | "thinking" | "ui" | "feature" | "footer" | "tokenSpeed";
+	/** 页签名存键、渲染时 t() 取词：切语言后当帧即新语言。 */
+	labelKey: LocaleKey;
 	items: any[];
 };
 
@@ -595,16 +626,29 @@ function renderPanelRule(theme: any, width: number): string {
 	return theme.fg("dim", "─".repeat(Math.max(0, width)));
 }
 
+/** 去掉 SettingsList 自带的英文提示行；面板统一在底部渲染自己的 i18n hint。 */
+function stripSettingsListHint(body: string[]): string[] {
+	while (body.length > 0 && body[body.length - 1] === "") body.pop();
+	const hintIndex = body.findIndex(
+		(line) =>
+			typeof line === "string" &&
+			(line.includes("Type to search") ||
+				line.includes("Enter/Space to change") ||
+				line.includes("Esc to cancel")),
+	);
+	return hintIndex >= 0 ? body.slice(0, hintIndex) : body;
+}
+
 function renderSectionTabBar(
 	theme: any,
-	sections: readonly { label: string }[],
+	sections: readonly { labelKey: LocaleKey }[],
 	activeIndex: number,
 	width: number,
 ): string {
 	const pieces: string[] = [];
 	for (let i = 0; i < sections.length; i++) {
 		if (i > 0) pieces.push(theme.fg("dim", " / "));
-		const label = sections[i]?.label ?? "";
+		const label = t(sections[i]?.labelKey ?? "tab.style");
 		pieces.push(
 			i === activeIndex
 				? theme.fg("text", typeof theme.bold === "function" ? theme.bold(label) : label)
@@ -621,7 +665,7 @@ export async function showCcstylePanel(
 	compactThinking?: CompactThinkingController,
 ): Promise<void> {
 	if (ctx?.mode !== "tui" || !ctx?.hasUI || typeof ctx.ui?.custom !== "function") {
-		ctx.ui?.notify?.("/ccstyle requires TUI mode", "warning");
+		ctx.ui?.notify?.(t("notify.requiresTui"), "warning");
 		return;
 	}
 
@@ -633,7 +677,7 @@ export async function showCcstylePanel(
 	await ctx.ui.custom((tui: any, theme: any, _keybindings: any, done: () => void) => {
 		const modeSetting = {
 			id: "mode",
-			label: "Mode",
+			label: t("mode.label"),
 			description: modeSettingDescription(config.mode),
 			currentValue: config.mode,
 			values: ["on", "compact", "off"],
@@ -641,19 +685,20 @@ export async function showCcstylePanel(
 		// Tracks whether a nested submenu is open so Tab switches sections
 		// only at the top level (mirrors Zentui settings: Tab = switch sections).
 		let nestedSubmenuOpen = false;
-		let nestedHint = "";
+		// 子面板提示只存键，渲染时 t() 取词：切语言后当帧即新语言。
+		let nestedHintKey: LocaleKey | "" = "";
 		const excludeSetting = {
 			id: "excludeRenderers",
-			label: "Exclude tools",
+			label: t("excludeRenderers.label"),
 			description: excludeRenderersDescription(config.excludeRenderers),
 			currentValue: formatExcludeRenderers(config.excludeRenderers),
 			submenu: (_current: string, closeSubmenu: (selected?: string) => void) => {
 				nestedSubmenuOpen = true;
-				nestedHint = "  Enter/Space to toggle · Esc back to Style";
+				nestedHintKey = "hint.excludeSubmenu";
 				return buildExcludeRenderersSubmenu(
 					() => {
 						nestedSubmenuOpen = false;
-						nestedHint = "";
+						nestedHintKey = "";
 						excludeSetting.currentValue = formatExcludeRenderers(config.excludeRenderers);
 						excludeSetting.description = excludeRenderersDescription(config.excludeRenderers);
 						closeSubmenu();
@@ -668,9 +713,8 @@ export async function showCcstylePanel(
 		};
 		const toolLabelClipSetting = {
 			id: "toolLabelClip",
-			label: "Tool label clip",
-			description:
-				"Max characters for path/command/name in single and grouped tool summaries; 0 fits available width. Enter to type a custom value.",
+			label: t("toolLabelClip.label"),
+			description: t("toolLabelClip.desc"),
 			currentValue: String(config.toolLabelClip),
 			values: [...TOOL_LABEL_CLIP_VALUES],
 			submenu: (_current: string, closeSubmenu: (selected?: string) => void) =>
@@ -678,23 +722,22 @@ export async function showCcstylePanel(
 		};
 		const diffViewSetting = {
 			id: "diffViewMode",
-			label: "Diff layout",
+			label: t("diffViewMode.label"),
 			description: diffViewModeDescription(config.diffViewMode),
 			currentValue: config.diffViewMode,
 			values: [...DIFF_VIEW_MODES],
 		};
 		const diffIndicatorSetting = {
 			id: "diffIndicatorMode",
-			label: "Diff indicator",
+			label: t("diffIndicatorMode.label"),
 			description: diffIndicatorDescription(config.diffIndicatorMode),
 			currentValue: config.diffIndicatorMode,
 			values: [...DIFF_INDICATOR_MODES],
 		};
 		const diffSplitSetting = {
 			id: "diffSplitMinWidth",
-			label: "Split min width",
-			description:
-				"Minimum terminal width before auto/split layout uses side-by-side columns. Enter to type a custom value.",
+			label: t("diffSplitMinWidth.label"),
+			description: t("diffSplitMinWidth.desc"),
 			currentValue: String(config.diffSplitMinWidth),
 			values: [...DIFF_SPLIT_MIN_WIDTH_VALUES],
 			submenu: (_current: string, closeSubmenu: (selected?: string) => void) =>
@@ -702,9 +745,8 @@ export async function showCcstylePanel(
 		};
 		const diffCollapsedSetting = {
 			id: "editDiffCollapsedLines",
-			label: "Edit collapsed lines",
-			description:
-				"Edit diff body lines before the expand hint (Ctrl+O / click). 0 shows only change counts and the hint.",
+			label: t("editDiffCollapsedLines.label"),
+			description: t("editDiffCollapsedLines.desc"),
 			currentValue: String(config.editDiffCollapsedLines),
 			values: [...DIFF_COLLAPSED_LINES_VALUES],
 			submenu: (_current: string, closeSubmenu: (selected?: string) => void) =>
@@ -712,9 +754,8 @@ export async function showCcstylePanel(
 		};
 		const writeDiffCollapsedSetting = {
 			id: "writeDiffCollapsedLines",
-			label: "Write collapsed lines",
-			description:
-				"Write-only collapsed body lines. 0 shows ↳ created + expand hint (stats stay on the title). Enter to type a custom value.",
+			label: t("writeDiffCollapsedLines.label"),
+			description: t("writeDiffCollapsedLines.desc"),
 			currentValue: String(config.writeDiffCollapsedLines),
 			values: [...WRITE_DIFF_COLLAPSED_LINES_VALUES],
 			submenu: (_current: string, closeSubmenu: (selected?: string) => void) =>
@@ -722,18 +763,15 @@ export async function showCcstylePanel(
 		};
 		const diffWordWrapSetting = {
 			id: "diffWordWrap",
-			label: "Diff word wrap",
-			description: config.diffWordWrap
-				? "Long diff lines wrap within the panel width."
-				: "Long diff lines are truncated to the panel width.",
+			label: t("diffWordWrap.label"),
+			description: config.diffWordWrap ? t("diffWordWrap.desc.on") : t("diffWordWrap.desc.off"),
 			currentValue: config.diffWordWrap ? "on" : "off",
 			values: ["on", "off"],
 		};
 		const expandedInputSetting = {
 			id: "expandedInputMaxLines",
-			label: "Expanded input lines",
-			description:
-				"Max Input section lines in an expanded tool card. Overflow shows click to show more. Default 5.",
+			label: t("expandedInputMaxLines.label"),
+			description: t("expandedInputMaxLines.desc"),
 			currentValue: String(config.expandedInputMaxLines),
 			values: [...EXPANDED_INPUT_MAX_LINES_VALUES],
 			submenu: (_current: string, closeSubmenu: (selected?: string) => void) =>
@@ -741,9 +779,8 @@ export async function showCcstylePanel(
 		};
 		const expandedOutputSetting = {
 			id: "expandedOutputMaxLines",
-			label: "Expanded output lines",
-			description:
-				"Max Output section lines in an expanded tool card. Overflow shows click to show more. Default 10.",
+			label: t("expandedOutputMaxLines.label"),
+			description: t("expandedOutputMaxLines.desc"),
 			currentValue: String(config.expandedOutputMaxLines),
 			values: [...EXPANDED_OUTPUT_MAX_LINES_VALUES],
 			submenu: (_current: string, closeSubmenu: (selected?: string) => void) =>
@@ -751,8 +788,8 @@ export async function showCcstylePanel(
 		};
 		const expandedMaxSetting = {
 			id: "expandedPreviewMaxLines",
-			label: "Expanded max lines",
-			description: "Max TaskList body lines when expanded. Expanded diffs show every line.",
+			label: t("expandedPreviewMaxLines.label"),
+			description: t("expandedPreviewMaxLines.desc"),
 			currentValue: String(config.expandedPreviewMaxLines),
 			values: [...EXPANDED_PREVIEW_MAX_LINES_VALUES],
 			submenu: (_current: string, closeSubmenu: (selected?: string) => void) =>
@@ -760,15 +797,15 @@ export async function showCcstylePanel(
 		};
 		const thinkingTitleSetting = {
 			id: "useSummaryTitlesAsThinkingTitle",
-			label: "Summary title",
-			description: "Use the latest provider summary as the active thinking title.",
+			label: t("useSummaryTitlesAsThinkingTitle.label"),
+			description: t("useSummaryTitlesAsThinkingTitle.desc"),
 			currentValue: config.useSummaryTitlesAsThinkingTitle ? "on" : "off",
 			values: ["on", "off"],
 		};
 		const thinkingPreviewSetting = {
 			id: "previewLines",
-			label: "Preview lines",
-			description: "Thinking preview lines; 0 hides the preview body.",
+			label: t("previewLines.label"),
+			description: t("previewLines.desc"),
 			currentValue: String(config.previewLines),
 			values: [...THINKING_PREVIEW_LINES_VALUES],
 			submenu: (_current: string, closeSubmenu: (selected?: string) => void) =>
@@ -776,8 +813,8 @@ export async function showCcstylePanel(
 		};
 		const thinkingAnimationSetting = {
 			id: "animationIntervalMs",
-			label: "Animation interval ms",
-			description: "Thinking title animation interval for the next thinking run.",
+			label: t("animationIntervalMs.label"),
+			description: t("animationIntervalMs.desc"),
 			currentValue: String(config.animationIntervalMs),
 			values: [...THINKING_ANIMATION_INTERVAL_VALUES],
 			submenu: (_current: string, closeSubmenu: (selected?: string) => void) =>
@@ -785,29 +822,29 @@ export async function showCcstylePanel(
 		};
 		const startupHeaderSetting = {
 			id: "showStartupHeader",
-			label: "Startup header",
+			label: t("showStartupHeader.label"),
 			description: config.showStartupHeader
-				? "Show the custom startup header (logo + tips) on new sessions."
-				: "Use Pi's native startup header instead.",
+				? t("showStartupHeader.desc.on")
+				: t("showStartupHeader.desc.off"),
 			currentValue: config.showStartupHeader ? "on" : "off",
 			values: ["on", "off"],
 		};
 		const stickyUserMessageSetting = {
 			id: "stickyUserMessage",
-			label: "Sticky user message",
+			label: t("stickyUserMessage.label"),
 			description: config.stickyUserMessage
-				? "Fullscreen: pin a user message's first line once it scrolls off the top edge, until the next one takes over."
-				: "User messages scroll normally.",
+				? t("stickyUserMessage.desc.on")
+				: t("stickyUserMessage.desc.off"),
 			currentValue: config.stickyUserMessage ? "on" : "off",
 			values: ["on", "off"],
 		};
 		const scrollButtonSetting = {
 			id: "scrollButtonMode",
-			label: "Scroll button mode",
+			label: t("scrollButtonMode.label"),
 			description:
 				config.scrollButtonMode === "dock"
-					? "Fullscreen: show the extension's dedicated Back to bottom row."
-					: "Fullscreen: show the same Back to bottom text in Pi's native floating overlay.",
+					? t("scrollButtonMode.desc.dock")
+					: t("scrollButtonMode.desc.native"),
 			currentValue: config.scrollButtonMode,
 			values: [...SCROLL_BUTTON_MODES],
 		};
@@ -815,44 +852,44 @@ export async function showCcstylePanel(
 		// 额外功能开关：注册于扩展加载期，切换后需重启（/reload）生效。
 		const sessionReferenceToggle = featureToggleSetting(
 			"enableSessionReference",
-			"Session reference",
-			"@ session mentions search & inject referenced session context. Next restart applies.",
-			"Session reference disabled.",
+			"enableSessionReference.label",
+			"enableSessionReference.desc.on",
+			"enableSessionReference.desc.off",
 			config.enableSessionReference,
 		);
 		const subagentAutocompleteToggle = featureToggleSetting(
 			"enableSubagentAutocomplete",
-			"Subagent autocomplete",
-			"@subagent:[name] mentions suggest agents and inject delegation instructions. Next restart applies.",
-			"Subagent autocomplete disabled.",
+			"enableSubagentAutocomplete.label",
+			"enableSubagentAutocomplete.desc.on",
+			"enableSubagentAutocomplete.desc.off",
 			config.enableSubagentAutocomplete,
 		);
 		const contextCommandToggle = featureToggleSetting(
 			"enableContextCommand",
-			"Context usage",
-			"/context shows context-window distribution with previews. Next restart applies.",
-			"Context command disabled.",
+			"enableContextCommand.label",
+			"enableContextCommand.desc.on",
+			"enableContextCommand.desc.off",
 			config.enableContextCommand,
 		);
 		const agentSummaryToggle = featureToggleSetting(
 			"enableAgentSummary",
-			"Agent summary",
-			"Append per-round tool stats after each agent turn. Next restart applies.",
-			"Agent summary disabled.",
+			"enableAgentSummary.label",
+			"enableAgentSummary.desc.on",
+			"enableAgentSummary.desc.off",
 			config.enableAgentSummary,
 		);
 		const agentSummaryKeysSetting = {
 			id: "agentSummaryKeys",
-			label: "Summary segments",
+			label: t("agentSummaryKeys.label"),
 			description: agentSummaryKeysDescription(config.agentSummaryKeys),
 			currentValue: config.agentSummaryKeys.join(", "),
 			submenu: (_current: string, closeSubmenu: (selected?: string) => void) => {
 				nestedSubmenuOpen = true;
-				nestedHint = "  Enter/Space to toggle · Esc back to Features";
+				nestedHintKey = "hint.agentSummarySubmenu";
 				return buildAgentSummaryKeysSubmenu(
 					() => {
 						nestedSubmenuOpen = false;
-						nestedHint = "";
+						nestedHintKey = "";
 						agentSummaryKeysSetting.currentValue = config.agentSummaryKeys.join(", ");
 						agentSummaryKeysSetting.description = agentSummaryKeysDescription(
 							config.agentSummaryKeys,
@@ -872,64 +909,63 @@ export async function showCcstylePanel(
 		};
 		const agentSummaryDoneDateSetting = {
 			id: "agentSummaryDoneDate",
-			label: "Summary done date",
+			label: t("agentSummaryDoneDate.label"),
 			description: config.agentSummaryDoneDate
-				? "Done segment shows the date, e.g. done 03-14 19:24."
-				: "Done segment shows the time only, e.g. done 19:24.",
+				? t("agentSummaryDoneDate.desc.on")
+				: t("agentSummaryDoneDate.desc.off"),
 			currentValue: config.agentSummaryDoneDate ? "on" : "off",
 			values: ["on", "off"],
 		};
 		const agentSummaryItalicSetting = {
 			id: "agentSummaryItalic",
-			label: "Summary italic",
+			label: t("agentSummaryItalic.label"),
 			description: config.agentSummaryItalic
-				? "Summary line renders in italics (Claude Code style)."
-				: "Summary line renders upright.",
+				? t("agentSummaryItalic.desc.on")
+				: t("agentSummaryItalic.desc.off"),
 			currentValue: config.agentSummaryItalic ? "on" : "off",
 			values: ["on", "off"],
 		};
 		const workingMessageToggle = featureToggleSetting(
 			"enableWorkingMessage",
-			"Working message",
-			"Extend Working... footer with token count and elapsed time. Next restart applies.",
-			"Native Working... footer only.",
+			"enableWorkingMessage.label",
+			"enableWorkingMessage.desc.on",
+			"enableWorkingMessage.desc.off",
 			config.enableWorkingMessage,
 		);
 		const aliasesToggle = featureToggleSetting(
 			"enableAliases",
-			"Aliases",
-			"/clear and /exit aliases enabled. Next restart applies.",
-			"Aliases disabled.",
+			"enableAliases.label",
+			"enableAliases.desc.on",
+			"enableAliases.desc.off",
 			config.enableAliases,
 		);
 		const markdownEnhanceToggle = featureToggleSetting(
 			"enableMarkdownEnhance",
-			"Markdown enhance",
-			"Mermaid dialects and circled-number conversion. Next restart applies.",
-			"Markdown enhancements off; another extension can own the markdown pass.",
+			"enableMarkdownEnhance.label",
+			"enableMarkdownEnhance.desc.on",
+			"enableMarkdownEnhance.desc.off",
 			config.enableMarkdownEnhance,
 		);
 		const footerCurrencySetting = {
 			id: "footerCurrency",
-			label: "Cost currency",
-			description:
-				"ISO code for the status-bar cost. Switching currency fills its preset rate. USD clears the rate.",
+			label: t("footerCurrency.label"),
+			description: t("footerCurrency.desc"),
 			currentValue: config.footerCurrency,
 			values: [...FOOTER_CURRENCY_PRESETS],
 			submenu: (_current: string, closeSubmenu: (selected?: string) => void) => {
 				nestedSubmenuOpen = true;
-				nestedHint = "  Enter to apply · Esc back to Footer";
+				nestedHintKey = "hint.currencySubmenu";
 				return buildValueInputSubmenu(
 					theme,
 					{
-						prompt: "  Cost currency — ISO code:",
+						prompt: t("input.prompt.currency"),
 						initial: footerCurrencySetting.currentValue,
-						hint: "  Enter to apply · Esc to go back",
+						hint: t("input.hint.generic"),
 						accept: (raw) => (raw === "" ? undefined : raw),
 					},
 					(selected) => {
 						nestedSubmenuOpen = false;
-						nestedHint = "";
+						nestedHintKey = "";
 						closeSubmenu(selected);
 					},
 				);
@@ -937,32 +973,31 @@ export async function showCcstylePanel(
 		};
 		const footerCurrencyRateSetting = {
 			id: "footerCurrencyRate",
-			label: "Cost rate",
-			description:
-				"Display units per 1 USD of cost. Switching currency replaces this. Empty keeps the number and only changes the symbol.",
+			label: t("footerCurrencyRate.label"),
+			description: t("footerCurrencyRate.desc"),
 			currentValue: footerCurrencyRateLabel(config.footerCurrencyRate),
 			submenu: (_current: string, closeSubmenu: (selected?: string) => void) => {
 				nestedSubmenuOpen = true;
-				nestedHint = "  Enter to apply · empty clears · Esc back to Footer";
+				nestedHintKey = "hint.rateSubmenu";
 				return buildValueInputSubmenu(
 					theme,
 					{
-						prompt: "  Cost rate — display units per 1 cost unit:",
+						prompt: t("input.prompt.rate"),
 						initial:
 							footerCurrencyRateSetting.currentValue === "-"
 								? ""
 								: footerCurrencyRateSetting.currentValue,
-						hint: "  Enter to apply · empty clears conversion · Esc to go back",
+						hint: t("input.hint.rate"),
 						accept: (raw) => {
 							if (raw === "" || raw === "-") return "-";
 							const n = Number(raw);
 							return Number.isFinite(n) && n > 0 ? raw : null;
 						},
-						invalid: () => "Rate must be a positive number",
+						invalid: () => t("input.error.rate"),
 					},
 					(selected) => {
 						nestedSubmenuOpen = false;
-						nestedHint = "";
+						nestedHintKey = "";
 						closeSubmenu(selected);
 					},
 				);
@@ -970,53 +1005,53 @@ export async function showCcstylePanel(
 		};
 		const footerNerdIconsSetting = {
 			id: "footerNerdIcons",
-			label: "Nerd Font icons",
+			label: t("footerNerdIcons.label"),
 			description: config.footerNerdIcons
-				? "Git and cache chips use Nerd Font glyphs. Turn off for plain text."
-				: "Git and cache chips use plain text. No Nerd Font required.",
+				? t("footerNerdIcons.desc.on")
+				: t("footerNerdIcons.desc.off"),
 			currentValue: config.footerNerdIcons ? "on" : "off",
 			values: ["on", "off"],
 		};
 		const editorPrefixSetting = {
 			id: "enableEditorPrefix",
-			label: "Editor prefix",
+			label: t("enableEditorPrefix.label"),
 			description: config.enableEditorPrefix
-				? "Show ❯ before the input line; color follows thinking level / bash mode."
-				: "Plain input line, no ❯ glyph.",
+				? t("enableEditorPrefix.desc.on")
+				: t("enableEditorPrefix.desc.off"),
 			currentValue: config.enableEditorPrefix ? "on" : "off",
 			values: ["on", "off"],
 		};
 		const customFooterSetting = {
 			id: "enableCustomFooter",
-			label: "Status bar",
+			label: t("enableCustomFooter.label"),
 			description: customFooterDescription(config.enableCustomFooter),
 			currentValue: config.enableCustomFooter ? "on" : "off",
 			values: ["on", "off"],
 		};
 		const footerGitStatsSetting = {
 			id: "footerGitStatsMode",
-			label: "Git changes",
+			label: t("footerGitStatsMode.label"),
 			description: footerGitStatsDescription(config.footerGitStatsMode),
 			currentValue: config.footerGitStatsMode,
 			values: FOOTER_GIT_STATS_MODES,
 		};
 		const footerTokenRateSetting = {
 			id: "footerTokenRate",
-			label: "Token rate",
+			label: t("footerTokenRate.label"),
 			description: footerTokenRateDescription(config.footerTokenRate),
 			currentValue: config.footerTokenRate ? "on" : "off",
 			values: ["on", "off"],
 		};
 		const footerTokenRateModeSetting = {
 			id: "footerTokenRateMode",
-			label: "Token rate mode",
+			label: t("footerTokenRateMode.label"),
 			description: footerTokenRateModeDescription(config.footerTokenRateMode),
 			currentValue: config.footerTokenRateMode,
 			values: FOOTER_TOKEN_RATE_MODES,
 		};
 		const footerTokenRateTtftSetting = {
 			id: "footerTokenRateTtft",
-			label: "Token rate TTFT",
+			label: t("footerTokenRateTtft.label"),
 			description: footerTokenRateTtftDescription(config.footerTokenRateTtft),
 			currentValue: config.footerTokenRateTtft ? "on" : "off",
 			values: ["on", "off"],
@@ -1026,49 +1061,49 @@ export async function showCcstylePanel(
 		// 重注入引擎，同样即时（providerOverrides 命中时按活动模型 provider 解析）。
 		const tokenSpeedDisplayRow = tokenSpeedRow(
 			"tokenSpeedDisplay",
-			"Token speed display",
+			t("tokenSpeedDisplay.label"),
 			() => config.tokenSpeed.display,
 			() => tokenSpeedDisplayDescription(config.tokenSpeed.display),
 			{ values: [...TOKEN_SPEED_DISPLAYS] },
 		);
 		const tokenSpeedIconRow = tokenSpeedRow(
 			"tokenSpeedIcon",
-			"Token speed icon",
+			t("tokenSpeedIcon.label"),
 			() => config.tokenSpeed.icon || "none",
 			() =>
 				config.tokenSpeed.icon
-					? `Glyph prefixing the rate chip, currently ${config.tokenSpeed.icon}.`
-					: "No glyph before the rate chip.",
+					? t("tokenSpeedIcon.desc.set", { icon: config.tokenSpeed.icon })
+					: t("tokenSpeedIcon.desc.none"),
 			{ values: [...TOKEN_SPEED_ICON_PRESETS] },
 		);
 		const tokenSpeedCountRow = tokenSpeedRow(
 			"tokenSpeedCountStrategy",
-			"Token count strategy",
+			t("tokenSpeedCountStrategy.label"),
 			() => config.tokenSpeed.countStrategy,
 			() => tokenSpeedCountStrategyDescription(config.tokenSpeed.countStrategy),
 			{ values: ["estimate", "direct"] },
 		);
 		const tokenSpeedEndTpsRow = tokenSpeedRow(
 			"tokenSpeedEndTpsBehavior",
-			"End-of-stream TPS",
+			t("tokenSpeedEndTpsBehavior.label"),
 			() => config.tokenSpeed.endTpsBehavior,
 			() => tokenSpeedEndTpsDescription(config.tokenSpeed.endTpsBehavior),
 			{ values: ["average", "last"] },
 		);
 		const tokenSpeedWindowRow = tokenSpeedRow(
 			"tokenSpeedSlidingWindow",
-			"Sliding window ms",
+			t("tokenSpeedSlidingWindow.label"),
 			() => String(config.tokenSpeed.slidingWindow),
-			() => "Live-rate window in ms; wider smooths bursty servers. Config clamps to 100..30000.",
+			() => t("tokenSpeedSlidingWindow.desc"),
 			{ values: [...TOKEN_SPEED_WINDOW_PRESETS] },
 		);
 		// 阈值行同 Diff 页签数值交互：Space 循环预设，Enter 进数字输入子面板（写回时自动收敛升序）。
 		const tokenSpeedThresholdRows = TOKEN_SPEED_TIERS.map((tier) => {
 			const row = tokenSpeedRow(
 				tokenSpeedTierId("tokenSpeedThreshold", tier),
-				`Threshold ${tier}`,
+				t("tokenSpeedThreshold.label", { tier }),
 				() => String(config.tokenSpeed.thresholds[tier]),
-				() => "Rate tier bound in tok/s; kept strictly ascending by auto-clamping.",
+				() => t("tokenSpeedThreshold.desc"),
 				{ values: [...TOKEN_SPEED_THRESHOLD_PRESETS[tier]] },
 			);
 			row.setting.submenu = (_current: string, closeSubmenu: (selected?: string) => void) =>
@@ -1078,15 +1113,15 @@ export async function showCcstylePanel(
 		const tokenSpeedColorRows = TOKEN_SPEED_TIERS.map((tier) =>
 			tokenSpeedRow(
 				tokenSpeedTierId("tokenSpeedColor", tier),
-				`${tier[0].toUpperCase()}${tier.slice(1)} tier color`,
+				t("tokenSpeedColor.label", { tier: `${tier[0].toUpperCase()}${tier.slice(1)}` }),
 				() => config.tokenSpeed.colors[tier],
-				() => `Truecolor for ${tier}-tier rate numbers. Enter/Space cycles preset colors.`,
+				() => t("tokenSpeedColor.desc"),
 				{ values: [...TOKEN_SPEED_COLOR_PRESETS] },
 			),
 		);
 		const tokenSpeedOverridesRow = tokenSpeedRow(
 			"tokenSpeedProviderOverrides",
-			"Provider overrides",
+			t("tokenSpeedProviderOverrides.label"),
 			() => {
 				const providers = Object.keys(config.tokenSpeed.providerOverrides);
 				return providers.length === 0 ? "none" : `${providers.length}: ${providers.join(", ")}`;
@@ -1094,10 +1129,12 @@ export async function showCcstylePanel(
 			() => {
 				const entries = Object.entries(config.tokenSpeed.providerOverrides);
 				return entries.length === 0
-					? "No per-provider tokenSpeed overrides. Edit ~/.pi/agent/pi-cc-extensions.json to add them."
-					: `Read-only here: ${entries
-							.map(([provider, override]) => `${provider} (${Object.keys(override).length} keys)`)
-							.join(", ")}. Edit the config file to change.`;
+					? t("tokenSpeedProviderOverrides.desc.none")
+					: t("tokenSpeedProviderOverrides.desc.some", {
+							entries: entries
+								.map(([provider, override]) => `${provider} (${Object.keys(override).length} keys)`)
+								.join(", "),
+						});
 			},
 		);
 		const tokenSpeedRows = [
@@ -1110,18 +1147,26 @@ export async function showCcstylePanel(
 			...tokenSpeedColorRows,
 			tokenSpeedOverridesRow,
 		];
+		// 语言设置项：label 固定双语，任何语言下都能找到这个开关；值保留枚举原样（zh/en）。
+		const languageSetting = {
+			id: "language",
+			label: "界面语言 / Language",
+			description: "面板显示语言 · Panel display language",
+			currentValue: config.language,
+			values: [...PANEL_LANGUAGES],
+		};
 		const pluginChipsSetting = {
 			id: "footerPluginChips",
-			label: "Footer chips",
+			label: t("footerPluginChips.label"),
 			description: pluginChipsDescription(),
 			currentValue: formatFooterChipSummary(config),
 			submenu: (_current: string, closeSubmenu: (selected?: string) => void) => {
 				nestedSubmenuOpen = true;
-				nestedHint = "  ←→ line · [ ] reorder · Space hide · Esc back to Footer";
+				nestedHintKey = "hint.footerChipsSubmenu";
 				return buildFooterChipsSubmenu(
 					() => {
 						nestedSubmenuOpen = false;
-						nestedHint = "";
+						nestedHintKey = "";
 						pluginChipsSetting.currentValue = formatFooterChipSummary(config);
 						pluginChipsSetting.description = pluginChipsDescription();
 						closeSubmenu();
@@ -1133,7 +1178,7 @@ export async function showCcstylePanel(
 				);
 			},
 		};
-		const featureToggles: Record<string, { apply: (on: boolean) => void }> = {
+		const featureToggles: Record<string, ReturnType<typeof featureToggleSetting>> = {
 			enableSessionReference: sessionReferenceToggle,
 			enableSubagentAutocomplete: subagentAutocompleteToggle,
 			enableContextCommand: contextCommandToggle,
@@ -1143,7 +1188,172 @@ export async function showCcstylePanel(
 			enableMarkdownEnhance: markdownEnhanceToggle,
 		};
 
+		// ── 多语言：所有行文案集中重算。构建时执行一次；切换语言后全体重执行（方案 C 行刷新）。 ──
+		const retranslateFns: Array<() => void> = [];
+		const retranslate = (fn: () => void): void => {
+			fn();
+			retranslateFns.push(fn);
+		};
+		const retranslatePanel = (): void => {
+			for (const fn of retranslateFns) fn();
+			for (const toggle of Object.values(featureToggles)) toggle.retranslate();
+			// tokenSpeed 行已有 refresh 机制（从 config 重读 currentValue/description）。
+			for (const row of tokenSpeedRows) row.refresh();
+		};
+		retranslate(() => {
+			modeSetting.label = t("mode.label");
+			modeSetting.description = modeSettingDescription(config.mode);
+		});
+		retranslate(() => {
+			excludeSetting.label = t("excludeRenderers.label");
+			excludeSetting.description = excludeRenderersDescription(config.excludeRenderers);
+		});
+		retranslate(() => {
+			toolLabelClipSetting.label = t("toolLabelClip.label");
+			toolLabelClipSetting.description = t("toolLabelClip.desc");
+		});
+		retranslate(() => {
+			diffViewSetting.label = t("diffViewMode.label");
+			diffViewSetting.description = diffViewModeDescription(config.diffViewMode);
+		});
+		retranslate(() => {
+			diffIndicatorSetting.label = t("diffIndicatorMode.label");
+			diffIndicatorSetting.description = diffIndicatorDescription(config.diffIndicatorMode);
+		});
+		retranslate(() => {
+			diffSplitSetting.label = t("diffSplitMinWidth.label");
+			diffSplitSetting.description = t("diffSplitMinWidth.desc");
+		});
+		retranslate(() => {
+			diffCollapsedSetting.label = t("editDiffCollapsedLines.label");
+			diffCollapsedSetting.description = t("editDiffCollapsedLines.desc");
+		});
+		retranslate(() => {
+			writeDiffCollapsedSetting.label = t("writeDiffCollapsedLines.label");
+			writeDiffCollapsedSetting.description = t("writeDiffCollapsedLines.desc");
+		});
+		retranslate(() => {
+			diffWordWrapSetting.label = t("diffWordWrap.label");
+			diffWordWrapSetting.description = config.diffWordWrap
+				? t("diffWordWrap.desc.on")
+				: t("diffWordWrap.desc.off");
+		});
+		retranslate(() => {
+			expandedInputSetting.label = t("expandedInputMaxLines.label");
+			expandedInputSetting.description = t("expandedInputMaxLines.desc");
+		});
+		retranslate(() => {
+			expandedOutputSetting.label = t("expandedOutputMaxLines.label");
+			expandedOutputSetting.description = t("expandedOutputMaxLines.desc");
+		});
+		retranslate(() => {
+			expandedMaxSetting.label = t("expandedPreviewMaxLines.label");
+			expandedMaxSetting.description = t("expandedPreviewMaxLines.desc");
+		});
+		retranslate(() => {
+			thinkingTitleSetting.label = t("useSummaryTitlesAsThinkingTitle.label");
+			thinkingTitleSetting.description = t("useSummaryTitlesAsThinkingTitle.desc");
+		});
+		retranslate(() => {
+			thinkingPreviewSetting.label = t("previewLines.label");
+			thinkingPreviewSetting.description = t("previewLines.desc");
+		});
+		retranslate(() => {
+			thinkingAnimationSetting.label = t("animationIntervalMs.label");
+			thinkingAnimationSetting.description = t("animationIntervalMs.desc");
+		});
+		retranslate(() => {
+			startupHeaderSetting.label = t("showStartupHeader.label");
+			startupHeaderSetting.description = config.showStartupHeader
+				? t("showStartupHeader.desc.on")
+				: t("showStartupHeader.desc.off");
+		});
+		retranslate(() => {
+			stickyUserMessageSetting.label = t("stickyUserMessage.label");
+			stickyUserMessageSetting.description = config.stickyUserMessage
+				? t("stickyUserMessage.desc.on")
+				: t("stickyUserMessage.desc.off");
+		});
+		retranslate(() => {
+			scrollButtonSetting.label = t("scrollButtonMode.label");
+			scrollButtonSetting.description =
+				config.scrollButtonMode === "dock"
+					? t("scrollButtonMode.desc.dock")
+					: t("scrollButtonMode.desc.native");
+		});
+		retranslate(() => {
+			agentSummaryKeysSetting.label = t("agentSummaryKeys.label");
+			agentSummaryKeysSetting.description = agentSummaryKeysDescription(config.agentSummaryKeys);
+		});
+		retranslate(() => {
+			agentSummaryDoneDateSetting.label = t("agentSummaryDoneDate.label");
+			agentSummaryDoneDateSetting.description = config.agentSummaryDoneDate
+				? t("agentSummaryDoneDate.desc.on")
+				: t("agentSummaryDoneDate.desc.off");
+		});
+		retranslate(() => {
+			agentSummaryItalicSetting.label = t("agentSummaryItalic.label");
+			agentSummaryItalicSetting.description = config.agentSummaryItalic
+				? t("agentSummaryItalic.desc.on")
+				: t("agentSummaryItalic.desc.off");
+		});
+		retranslate(() => {
+			footerCurrencySetting.label = t("footerCurrency.label");
+			footerCurrencySetting.description = t("footerCurrency.desc");
+		});
+		retranslate(() => {
+			footerCurrencyRateSetting.label = t("footerCurrencyRate.label");
+			footerCurrencyRateSetting.description = t("footerCurrencyRate.desc");
+		});
+		retranslate(() => {
+			footerNerdIconsSetting.label = t("footerNerdIcons.label");
+			footerNerdIconsSetting.description = config.footerNerdIcons
+				? t("footerNerdIcons.desc.on")
+				: t("footerNerdIcons.desc.off");
+		});
+		retranslate(() => {
+			editorPrefixSetting.label = t("enableEditorPrefix.label");
+			editorPrefixSetting.description = config.enableEditorPrefix
+				? t("enableEditorPrefix.desc.on")
+				: t("enableEditorPrefix.desc.off");
+		});
+		retranslate(() => {
+			customFooterSetting.label = t("enableCustomFooter.label");
+			customFooterSetting.description = customFooterDescription(config.enableCustomFooter);
+		});
+		retranslate(() => {
+			footerGitStatsSetting.label = t("footerGitStatsMode.label");
+			footerGitStatsSetting.description = footerGitStatsDescription(config.footerGitStatsMode);
+		});
+		retranslate(() => {
+			footerTokenRateSetting.label = t("footerTokenRate.label");
+			footerTokenRateSetting.description = footerTokenRateDescription(config.footerTokenRate);
+		});
+		retranslate(() => {
+			footerTokenRateModeSetting.label = t("footerTokenRateMode.label");
+			footerTokenRateModeSetting.description = footerTokenRateModeDescription(
+				config.footerTokenRateMode,
+			);
+		});
+		retranslate(() => {
+			footerTokenRateTtftSetting.label = t("footerTokenRateTtft.label");
+			footerTokenRateTtftSetting.description = footerTokenRateTtftDescription(
+				config.footerTokenRateTtft,
+			);
+		});
+		retranslate(() => {
+			pluginChipsSetting.label = t("footerPluginChips.label");
+			pluginChipsSetting.description = pluginChipsDescription();
+		});
+
 		const onSettingChange = (id: string, value: string) => {
+			if (id === "language") {
+				// 语言切换：写回后全面板行文案重算（方案 C），当帧即新语言；页签与 hint 在 render 时取词，天然即时。
+				updateConfig({ language: value as PanelLanguage });
+				retranslatePanel();
+				ctx.ui.notify(t("notify.updated", { id, value }), "info");
+				return;
+			}
 			if (id === "enableCustomFooter") {
 				const enabled = value === "on";
 				updateConfig({ enableCustomFooter: enabled });
@@ -1151,7 +1361,7 @@ export async function showCcstylePanel(
 				customFooterSetting.description = customFooterDescription(enabled);
 				if (enabled) applyCustomFooter(ctx);
 				else clearCustomFooter(ctx);
-				ctx.ui.notify(`Updated ${id}: ${value}`, "info");
+				ctx.ui.notify(t("notify.updated", { id, value }), "info");
 				return;
 			}
 			if (id === "footerCurrency") {
@@ -1163,7 +1373,7 @@ export async function showCcstylePanel(
 				footerCurrencyRateSetting.currentValue = footerCurrencyRateLabel(config.footerCurrencyRate);
 				if (config.enableCustomFooter) applyCustomFooter(ctx);
 				ctx.ui.notify(
-					`Updated ${id}: ${config.footerCurrency} · ${footerCurrencyRateSetting.currentValue}`,
+					`${t("notify.updated", { id, value: config.footerCurrency })} · ${footerCurrencyRateSetting.currentValue}`,
 					"info",
 				);
 				return;
@@ -1172,7 +1382,10 @@ export async function showCcstylePanel(
 				updateConfig({ footerCurrencyRate: value === "-" ? null : Number(value) });
 				footerCurrencyRateSetting.currentValue = footerCurrencyRateLabel(config.footerCurrencyRate);
 				if (config.enableCustomFooter) applyCustomFooter(ctx);
-				ctx.ui.notify(`Updated ${id}: ${footerCurrencyRateSetting.currentValue}`, "info");
+				ctx.ui.notify(
+					t("notify.updated", { id, value: footerCurrencyRateSetting.currentValue }),
+					"info",
+				);
 				return;
 			}
 			if (id === "footerGitStatsMode") {
@@ -1180,7 +1393,7 @@ export async function showCcstylePanel(
 				footerGitStatsSetting.currentValue = config.footerGitStatsMode;
 				footerGitStatsSetting.description = footerGitStatsDescription(config.footerGitStatsMode);
 				refreshFooterGitStats();
-				ctx.ui.notify(`Updated ${id}: ${value}`, "info");
+				ctx.ui.notify(t("notify.updated", { id, value }), "info");
 				return;
 			}
 			if (id === "footerTokenRate") {
@@ -1188,7 +1401,7 @@ export async function showCcstylePanel(
 				updateConfig({ footerTokenRate: enabled });
 				footerTokenRateSetting.currentValue = enabled ? "on" : "off";
 				footerTokenRateSetting.description = footerTokenRateDescription(enabled);
-				ctx.ui.notify(`Updated ${id}: ${value}`, "info");
+				ctx.ui.notify(t("notify.updated", { id, value }), "info");
 				return;
 			}
 			if (id === "footerTokenRateMode") {
@@ -1197,7 +1410,7 @@ export async function showCcstylePanel(
 				footerTokenRateModeSetting.description = footerTokenRateModeDescription(
 					config.footerTokenRateMode,
 				);
-				ctx.ui.notify(`Updated ${id}: ${value}`, "info");
+				ctx.ui.notify(t("notify.updated", { id, value }), "info");
 				return;
 			}
 			if (id === "footerTokenRateTtft") {
@@ -1205,7 +1418,7 @@ export async function showCcstylePanel(
 				updateConfig({ footerTokenRateTtft: enabled });
 				footerTokenRateTtftSetting.currentValue = enabled ? "on" : "off";
 				footerTokenRateTtftSetting.description = footerTokenRateTtftDescription(enabled);
-				ctx.ui.notify(`Updated ${id}: ${value}`, "info");
+				ctx.ui.notify(t("notify.updated", { id, value }), "info");
 				return;
 			}
 			// tokenSpeed 配置族：整段深拷贝写回（updateConfig 会整体 normalize），行显示从 config 重读；
@@ -1219,7 +1432,7 @@ export async function showCcstylePanel(
 					setTokenSpeedOptions(resolveTokenSpeed(config.tokenSpeed, ctx?.model?.provider));
 					for (const row of tokenSpeedRows) row.refresh();
 					hooks.refreshCurrentTranscript(ctx);
-					ctx.ui.notify(`Updated ${id}: ${speedRow.setting.currentValue}`, "info");
+					ctx.ui.notify(t("notify.updated", { id, value: speedRow.setting.currentValue }), "info");
 				}
 				return;
 			}
@@ -1228,10 +1441,10 @@ export async function showCcstylePanel(
 				updateConfig({ enableEditorPrefix: enabled });
 				editorPrefixSetting.currentValue = enabled ? "on" : "off";
 				editorPrefixSetting.description = enabled
-					? "Show ❯ before the input line; color follows thinking level / bash mode."
-					: "Plain input line, no ❯ glyph.";
+					? t("enableEditorPrefix.desc.on")
+					: t("enableEditorPrefix.desc.off");
 				editorPrefixChanged = true;
-				ctx.ui.notify(`Updated ${id}: ${value}`, "info");
+				ctx.ui.notify(t("notify.updated", { id, value }), "info");
 				return;
 			}
 			if (id === "footerNerdIcons") {
@@ -1239,9 +1452,9 @@ export async function showCcstylePanel(
 				updateConfig({ footerNerdIcons: enabled });
 				footerNerdIconsSetting.currentValue = enabled ? "on" : "off";
 				footerNerdIconsSetting.description = enabled
-					? "Git and cache chips use Nerd Font glyphs. Turn off for plain text."
-					: "Git and cache chips use plain text. No Nerd Font required.";
-				ctx.ui.notify(`Updated ${id}: ${value}`, "info");
+					? t("footerNerdIcons.desc.on")
+					: t("footerNerdIcons.desc.off");
+				ctx.ui.notify(t("notify.updated", { id, value }), "info");
 				return;
 			}
 			// 额外功能开关：字段名与配置布尔字段一一对应，切换后重启生效。
@@ -1249,7 +1462,7 @@ export async function showCcstylePanel(
 			if (featureToggle) {
 				updateConfig({ [id]: value === "on" } as Partial<Config>);
 				featureToggle.apply(value === "on");
-				ctx.ui.notify(`Updated ${id}: ${value} (next restart)`, "info");
+				ctx.ui.notify(t("notify.updatedRestart", { id, value }), "info");
 				return;
 			}
 			switch (id) {
@@ -1308,8 +1521,8 @@ export async function showCcstylePanel(
 				case "diffWordWrap":
 					updateConfig({ diffWordWrap: value === "on" });
 					diffWordWrapSetting.description = config.diffWordWrap
-						? "Long diff lines wrap within the panel width."
-						: "Long diff lines are truncated to the panel width.";
+						? t("diffWordWrap.desc.on")
+						: t("diffWordWrap.desc.off");
 					break;
 				case "expandedInputMaxLines":
 					updateConfig({
@@ -1350,14 +1563,14 @@ export async function showCcstylePanel(
 				case "agentSummaryDoneDate":
 					updateConfig({ agentSummaryDoneDate: value === "on" });
 					agentSummaryDoneDateSetting.description = config.agentSummaryDoneDate
-						? "Done segment shows the date, e.g. done 03-14 19:24."
-						: "Done segment shows the time only, e.g. done 19:24.";
+						? t("agentSummaryDoneDate.desc.on")
+						: t("agentSummaryDoneDate.desc.off");
 					break;
 				case "agentSummaryItalic":
 					updateConfig({ agentSummaryItalic: value === "on" });
 					agentSummaryItalicSetting.description = config.agentSummaryItalic
-						? "Summary line renders in italics (Claude Code style)."
-						: "Summary line renders upright.";
+						? t("agentSummaryItalic.desc.on")
+						: t("agentSummaryItalic.desc.off");
 					break;
 				case "previewLines":
 					updateConfig({ previewLines: pickPositiveInt(value, DEFAULT_CONFIG.previewLines, 0) });
@@ -1372,24 +1585,24 @@ export async function showCcstylePanel(
 				case "stickyUserMessage": {
 					updateConfig({ stickyUserMessage: value === "on" });
 					stickyUserMessageSetting.description = config.stickyUserMessage
-						? "Fullscreen: pin a user message's first line once it scrolls off the top edge, until the next one takes over."
-						: "User messages scroll normally.";
+						? t("stickyUserMessage.desc.on")
+						: t("stickyUserMessage.desc.off");
 					break;
 				}
 				case "scrollButtonMode": {
 					updateConfig({ scrollButtonMode: value as ScrollButtonMode });
 					scrollButtonSetting.description =
 						config.scrollButtonMode === "dock"
-							? "Fullscreen: show the extension's dedicated Back to bottom row."
-							: "Fullscreen: show the same Back to bottom text in Pi's native floating overlay.";
+							? t("scrollButtonMode.desc.dock")
+							: t("scrollButtonMode.desc.native");
 					break;
 				}
 				case "showStartupHeader": {
 					const enabled = value === "on";
 					updateConfig({ showStartupHeader: enabled });
 					startupHeaderSetting.description = config.showStartupHeader
-						? "Show the custom startup header (logo + tips) on new sessions."
-						: "Use Pi's native startup header instead.";
+						? t("showStartupHeader.desc.on")
+						: t("showStartupHeader.desc.off");
 					if (enabled) applyStartupHeader(ctx);
 					else clearStartupHeader(ctx);
 					break;
@@ -1399,18 +1612,18 @@ export async function showCcstylePanel(
 			}
 			compactThinking?.updateConfig(getCompactThinkingConfig());
 			hooks.refreshCurrentTranscript(ctx);
-			ctx.ui.notify(`Updated ${id}: ${value}`, "info");
+			ctx.ui.notify(t("notify.updated", { id, value }), "info");
 		};
 
 		const sections: CcstyleSection[] = [
 			{
 				id: "style",
-				label: "Style",
+				labelKey: "tab.style",
 				items: [modeSetting, excludeSetting],
 			},
 			{
 				id: "feature",
-				label: "Features",
+				labelKey: "tab.features",
 				items: [
 					sessionReferenceToggle.setting,
 					subagentAutocompleteToggle.setting,
@@ -1426,8 +1639,9 @@ export async function showCcstylePanel(
 			},
 			{
 				id: "ui",
-				label: "UI",
+				labelKey: "tab.ui",
 				items: [
+					languageSetting,
 					expandedInputSetting,
 					expandedOutputSetting,
 					expandedMaxSetting,
@@ -1440,7 +1654,7 @@ export async function showCcstylePanel(
 			},
 			{
 				id: "diff",
-				label: "Diff",
+				labelKey: "tab.diff",
 				items: [
 					diffViewSetting,
 					diffIndicatorSetting,
@@ -1452,24 +1666,29 @@ export async function showCcstylePanel(
 			},
 			{
 				id: "thinking",
-				label: "Thinking",
+				labelKey: "tab.thinking",
 				items: [thinkingTitleSetting, thinkingPreviewSetting, thinkingAnimationSetting],
 			},
 			{
 				id: "footer",
-				label: "Footer",
+				labelKey: "tab.footer",
 				items: [
 					customFooterSetting,
 					footerTokenRateSetting,
 					footerTokenRateModeSetting,
 					footerTokenRateTtftSetting,
-					...tokenSpeedRows.map((row) => row.setting),
 					footerCurrencySetting,
 					footerCurrencyRateSetting,
 					footerNerdIconsSetting,
 					footerGitStatsSetting,
 					pluginChipsSetting,
 				],
+			},
+			{
+				// tokenSpeed 配置族独立页签：与状态栏开关/布局解耦，保持速率展示配置的独立性。
+				id: "tokenSpeed",
+				labelKey: "tab.tokenSpeed",
+				items: tokenSpeedRows.map((row) => row.setting),
 			},
 		];
 
@@ -1519,16 +1738,8 @@ export async function showCcstylePanel(
 			render(width: number): string[] {
 				const safeWidth = Math.max(0, Math.floor(width));
 				const rule = renderPanelRule(theme, safeWidth);
-				const body = activeList().render(safeWidth);
 				// Drop SettingsList's built-in hint — the panel footer below is the single source.
-				while (body.length > 0 && body[body.length - 1] === "") body.pop();
-				const listHintIndex = body.findIndex(
-					(line) =>
-						typeof line === "string" &&
-						(line.includes("Enter/Space to change") || line.includes("Esc to cancel")),
-				);
-				const listBody = listHintIndex >= 0 ? body.slice(0, listHintIndex) : body;
-				while (listBody.length > 0 && listBody[listBody.length - 1] === "") listBody.pop();
+				const listBody = stripSettingsListHint(activeList().render(safeWidth));
 
 				// Frame: top rule · tabs · mid rule · settings · mid rule · footer · bottom rule
 				return [
@@ -1538,11 +1749,7 @@ export async function showCcstylePanel(
 					...listBody,
 					rule,
 					truncateToWidth(
-						theme.fg(
-							"dim",
-							nestedHint ||
-								"  Enter/Space to change · Enter on numbers types a custom value · Tab/Shift+Tab to switch sections · Esc to close",
-						),
+						theme.fg("dim", nestedHintKey ? t(nestedHintKey) : t("hint.main")),
 						safeWidth,
 					),
 					rule,

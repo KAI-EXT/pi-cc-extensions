@@ -17,6 +17,10 @@ import { join } from "node:path";
 
 export type CompactStyleMode = "on" | "compact" | "off";
 
+/** 面板显示语言：zh 简体中文（默认），en 英文。 */
+export type PanelLanguage = "zh" | "en";
+export const PANEL_LANGUAGES: PanelLanguage[] = ["zh", "en"];
+
 export type DiffViewMode = "auto" | "split" | "unified";
 export type DiffIndicatorMode = "bars" | "classic" | "none";
 export type FooterGitStatsMode = "working" | "branch";
@@ -56,6 +60,8 @@ export const DEFAULT_TOOL_DISPLAY_CONFIG: ToolDisplayConfig = {
 
 export type Config = {
 	mode: CompactStyleMode;
+	/** 面板显示语言；仅影响 /ccstyle 面板文案，不改变配置键名与枚举值。 */
+	language: PanelLanguage;
 	excludeRenderers: string[];
 	diffViewMode: DiffViewMode;
 	diffIndicatorMode: DiffIndicatorMode;
@@ -177,6 +183,7 @@ export const AGENT_SUMMARY_KEY_VALUES = [
 
 export const DEFAULT_CONFIG: Config = {
 	mode: "compact",
+	language: "zh",
 	excludeRenderers: [],
 	diffViewMode: DEFAULT_TOOL_DISPLAY_CONFIG.diffViewMode,
 	diffIndicatorMode: DEFAULT_TOOL_DISPLAY_CONFIG.diffIndicatorMode,
@@ -276,6 +283,7 @@ function normalizeAgentSummaryKeys(value: unknown): string[] {
 export function normalizeConfig(input: unknown): Config {
 	const source = (input && typeof input === "object" ? input : {}) as Record<string, unknown>;
 	const mode = pickEnum(source.mode, ["on", "compact", "off"], DEFAULT_CONFIG.mode);
+	const language = pickEnum(source.language, PANEL_LANGUAGES, DEFAULT_CONFIG.language);
 	const excludeRenderers = Array.isArray(source.excludeRenderers)
 		? [
 				...new Set(
@@ -287,6 +295,7 @@ export function normalizeConfig(input: unknown): Config {
 		: [];
 	return {
 		mode,
+		language,
 		excludeRenderers,
 		diffViewMode: pickEnum(source.diffViewMode, DIFF_VIEW_MODES, DEFAULT_CONFIG.diffViewMode),
 		diffIndicatorMode: pickEnum(
@@ -470,6 +479,7 @@ export function mergeExcludeRendererCandidates(
 export function formatConfigStatus(source: Config = config): string {
 	return [
 		`mode=${source.mode}`,
+		`language=${source.language}`,
 		`exclude=[${source.excludeRenderers.join(", ") || "none"}]`,
 		`diffView=${source.diffViewMode}`,
 		`diffIndicator=${source.diffIndicatorMode}`,
