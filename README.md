@@ -15,13 +15,15 @@
 ## 快速开始
 
 ```bash
-pi install npm:pi-cc-extensions
+pi install npm:@kai-ext/pi-cc-extensions
 
-# GitHub
+# 或从 GitHub 安装
 pi install git:github.com/KAI-EXT/pi-cc-extensions
 ```
 
 安装后执行 `/reload`
+
+> 本包为本 fork 的发布版（`@kai-ext` scope）；npm 上的 `pi-cc-extensions`（无 scope）是上游 minuque 的原版，不含本 fork 的多语言等扩展。
 
 ## 功能
 

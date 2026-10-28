@@ -1,5 +1,5 @@
 {
-	"name": "pi-cc-extensions",
+	"name": "@kai-ext/pi-cc-extensions",
 	"version": "1.0.12",
 	"license": "MIT",
 	"description": "Claude Code-style TUI output with some personal touches and handy utilities.",
@@ -67,5 +67,9 @@
 		"@biomejs/biome": "2.5.5",
 		"@types/node": "^26.1.1",
 		"typescript": "^5.9.3"
+	},
+	"publishConfig": {
+		"access": "public",
+		"registry": "https://registry.npmjs.org/"
 	}
 }

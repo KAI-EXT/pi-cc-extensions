@@ -15,13 +15,15 @@ Click the cover to play the demo video
 ## Quick start
 
 ```bash
-pi install npm:pi-cc-extensions
+pi install npm:@kai-ext/pi-cc-extensions
 
-# GitHub
+# Or from GitHub
 pi install git:github.com/KAI-EXT/pi-cc-extensions
 ```
 
 Run `/reload` after installation.
+
+> This npm package is this fork's release (under the `@kai-ext` scope); the unscoped `pi-cc-extensions` on npm is the upstream original by minuque, without this fork's extensions such as i18n.
 
 ## Features
 
