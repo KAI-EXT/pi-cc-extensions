@@ -549,7 +549,11 @@ const createCustomFooterFactory =
 
 			const gitColor = theme.getThinkingBorderColor("medium");
 			let place = theme.fg("accent", cwdLabel);
-			const sessionName = ctx.sessionManager.getSessionName();
+			// 会话名仅在位置为 cwd 时跟在目录后；border 位置由输入框顶边框渲染。
+			const sessionName =
+				config.showSessionName && config.sessionNamePosition === "cwd"
+					? ctx.sessionManager.getSessionName()
+					: undefined;
 			if (sessionName) {
 				place += theme.fg("muted", " in ") + theme.fg("success", sessionName);
 			}

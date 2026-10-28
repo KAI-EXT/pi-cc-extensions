@@ -32,7 +32,7 @@ Run `/reload` after installation.
 | Claude Code UI              | Tool summaries, expand/collapse, rich edit/write diffs, and `on` / `compact` / `off` modes                                                   | `/ccstyle`                                      |
 | Markdown enhancements       | Mermaid dialects and circled-number conversion                                                                                               | Automatic; turn off with `enableMarkdownEnhance: false` |
 | Fullscreen mode             | Tool card/group expand and collapse on click, previews, hover highlight, and a back-to-bottom button                                         | `TUIMODE=fullscreen` or `--tui-mode fullscreen` |
-| Settings panel              | `Style / Features / UI / Diff / Thinking / Footer / Token Speed` tabs. The Token Speed tab edits tokenSpeed visually (display mode / icon / count strategy / end-of-stream behavior / sliding window / tier thresholds / tier colors; provider overrides read-only); the Features tab toggles agentSummary segments plus done-date and italic | `/ccstyle`                                      |
+| Settings panel              | `Style / Features / UI / Diff / Thinking / Footer / Token Speed` tabs. The Token Speed tab edits tokenSpeed visually (display mode / icon / count strategy / end-of-stream behavior / sliding window / tier thresholds / tier colors; provider overrides read-only); the Features tab toggles agentSummary segments plus done-date and italic; the session name can show on the editor top border or after the cwd chip | `/ccstyle`                                      |
 | Context inspection          | Usage breakdown and previews for the system prompt, memory, skills, tools definition, and messages                                           | `/context`                                      |
 | Session/Subagent references | Search and inject effective context from previous Sessions or existing SubAgents                                                             | `@`                                             |
 | Status bar                  | Shows model, context, cache, cost, session token totals (`Σ 2.1M ↑ 1.1M ↓ 45k 󰆼 980k`: total/input/output/cache), and git; also works with `@narumitw/pi-usage` for live quota. Output rate is tier-colored via `tokenSpeed`. Git/cache Nerd Font icons can be turned off | `/ccstyle`                                      |
@@ -69,6 +69,8 @@ Renderer snapshots for `on` / `compact` modes: [default](./docs/tool-render-exam
   "showStartupHeader": true,               // startup header (logo + tips) toggle
   "stickyUserMessage": true,               // fullscreen: pin a user message's first line once it scrolls off the top edge, until the next one takes over
   "scrollButtonMode": "dock",              // fullscreen: extension dock row / native Pi floating overlay
+  "showSessionName": true,                 // session name visibility
+  "sessionNamePosition": "border",         // border: right side of the editor top border (Working line); cwd: after the cwd chip
 
   // diff
   "diffViewMode": "auto",                  // layout: auto / split / unified

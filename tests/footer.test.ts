@@ -62,6 +62,13 @@ test("normalizeConfig defaults enableCustomFooter on and honors explicit off", (
 	assert.equal(normalizeConfig({ footerTokenRate: false }).footerTokenRate, false);
 	assert.equal(normalizeConfig({}).footerTotalTokens, true);
 	assert.equal(normalizeConfig({ footerTotalTokens: false }).footerTotalTokens, false);
+	assert.equal(normalizeConfig({}).showSessionName, true);
+	assert.equal(normalizeConfig({ showSessionName: false }).showSessionName, false);
+	assert.equal(normalizeConfig({}).sessionNamePosition, "border");
+	assert.equal(normalizeConfig({ sessionNamePosition: "cwd" }).sessionNamePosition, "cwd");
+	assert.equal(normalizeConfig({ sessionNamePosition: "sidebar" }).sessionNamePosition, "border");
+	assert.match(formatConfigStatus(normalizeConfig({})), /sessionName=on/);
+	assert.match(formatConfigStatus(normalizeConfig({})), /sessionNameAt=border/);
 	assert.match(formatConfigStatus(normalizeConfig({})), /footerTotalTokens=on/);
 	assert.match(
 		formatConfigStatus(normalizeConfig({ footerTotalTokens: false })),

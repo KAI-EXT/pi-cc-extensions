@@ -72,11 +72,11 @@ function fakePanelUi() {
 
 const hooks = { applyStyleMode: () => {}, refreshCurrentTranscript: () => {} };
 
-/** 从 Style 页签走到 UI 页签的 Editor prefix 行（首行是语言项，共 9 行）。 */
+/** 从 Style 页签走到 UI 页签的 Editor prefix 行（语言项后会话名两行，共 11 行）。 */
 function selectEditorPrefixRow(panel: Panel): void {
 	panel.handleInput("\t");
 	panel.handleInput("\t");
-	for (let i = 0; i < 8; i++) panel.handleInput("\x1b[B");
+	for (let i = 0; i < 10; i++) panel.handleInput("\x1b[B");
 }
 
 test("toggling Editor prefix keeps the panel alive and swaps the editor after close", async () => {

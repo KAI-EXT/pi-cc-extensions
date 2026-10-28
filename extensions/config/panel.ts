@@ -56,6 +56,7 @@ import {
 	formatExcludeRenderers,
 	getCompactThinkingConfig,
 	PANEL_LANGUAGES,
+	SESSION_NAME_POSITIONS,
 	pickPositiveInt,
 	pickPositiveNumber,
 	pickToolLabelClip,
@@ -73,6 +74,7 @@ import {
 	type FooterTokenRateMode,
 	type PanelLanguage,
 	type ScrollButtonMode,
+	type SessionNamePosition,
 	isExcludedRenderer,
 	mergeExcludeRendererCandidates,
 	withExcludeRendererToggle,
@@ -849,6 +851,25 @@ export async function showCcstylePanel(
 			currentValue: config.scrollButtonMode,
 			values: [...SCROLL_BUTTON_MODES],
 		};
+		const sessionNameSetting = {
+			id: "showSessionName",
+			label: t("showSessionName.label"),
+			description: config.showSessionName
+				? t("showSessionName.desc.on")
+				: t("showSessionName.desc.off"),
+			currentValue: config.showSessionName ? "on" : "off",
+			values: ["on", "off"],
+		};
+		const sessionNamePositionSetting = {
+			id: "sessionNamePosition",
+			label: t("sessionNamePosition.label"),
+			description:
+				config.sessionNamePosition === "border"
+					? t("sessionNamePosition.desc.border")
+					: t("sessionNamePosition.desc.cwd"),
+			currentValue: config.sessionNamePosition,
+			values: [...SESSION_NAME_POSITIONS],
+		};
 
 		// 额外功能开关：注册于扩展加载期，切换后需重启（/reload）生效。
 		const sessionReferenceToggle = featureToggleSetting(
@@ -1273,6 +1294,19 @@ export async function showCcstylePanel(
 			thinkingAnimationSetting.description = t("animationIntervalMs.desc");
 		});
 		retranslate(() => {
+			sessionNameSetting.label = t("showSessionName.label");
+			sessionNameSetting.description = config.showSessionName
+				? t("showSessionName.desc.on")
+				: t("showSessionName.desc.off");
+		});
+		retranslate(() => {
+			sessionNamePositionSetting.label = t("sessionNamePosition.label");
+			sessionNamePositionSetting.description =
+				config.sessionNamePosition === "border"
+					? t("sessionNamePosition.desc.border")
+					: t("sessionNamePosition.desc.cwd");
+		});
+		retranslate(() => {
 			startupHeaderSetting.label = t("showStartupHeader.label");
 			startupHeaderSetting.description = config.showStartupHeader
 				? t("showStartupHeader.desc.on")
@@ -1461,6 +1495,28 @@ export async function showCcstylePanel(
 					hooks.refreshCurrentTranscript(ctx);
 					ctx.ui.notify(t("notify.updated", { id, value: speedRow.setting.currentValue }), "info");
 				}
+				return;
+			}
+			if (id === "showSessionName") {
+				const enabled = value === "on";
+				updateConfig({ showSessionName: enabled });
+				sessionNameSetting.currentValue = enabled ? "on" : "off";
+				sessionNameSetting.description = enabled
+					? t("showSessionName.desc.on")
+					: t("showSessionName.desc.off");
+				refreshFooterGitStats();
+				ctx.ui.notify(t("notify.updated", { id, value }), "info");
+				return;
+			}
+			if (id === "sessionNamePosition") {
+				updateConfig({ sessionNamePosition: value as SessionNamePosition });
+				sessionNamePositionSetting.currentValue = config.sessionNamePosition;
+				sessionNamePositionSetting.description =
+					config.sessionNamePosition === "border"
+						? t("sessionNamePosition.desc.border")
+						: t("sessionNamePosition.desc.cwd");
+				refreshFooterGitStats();
+				ctx.ui.notify(t("notify.updated", { id, value }), "info");
 				return;
 			}
 			if (id === "enableEditorPrefix") {
@@ -1669,6 +1725,8 @@ export async function showCcstylePanel(
 				labelKey: "tab.ui",
 				items: [
 					languageSetting,
+					sessionNameSetting,
+					sessionNamePositionSetting,
 					expandedInputSetting,
 					expandedOutputSetting,
 					expandedMaxSetting,

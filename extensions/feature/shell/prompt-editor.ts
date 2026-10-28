@@ -14,6 +14,7 @@
  * 前缀开 = userPaddingX + 2，关 = userPaddingX。
  */
 import { CustomEditor, type ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { visibleWidth } from "@earendil-works/pi-tui";
 import { config } from "../../config/config.ts";
 
 /** `❯ ` 固定 2 列：glyph + 尾随空格。 */
@@ -28,7 +29,111 @@ export function inputTextIndent(): number {
 	return config.enableEditorPrefix ? userPaddingX + PROMPT_COLS : userPaddingX;
 }
 
+// ── 会话名称：输入框顶边框右侧（Working 同行）──
+
+/** 会话名来源：applyPromptEditor 时从 ctx 注入，渲染时实时读取。 */
+let sessionNameSource: (() => string | undefined) | undefined;
+
+/** app 主题（ctx.ui.theme）：会话名 dim 色用；编辑器自带 theme（EditorTheme）无 fg。 */
+let appTheme: { fg?: (color: string, text: string) => string } | undefined;
+
+export function setEditorTheme(
+	theme: { fg?: (color: string, text: string) => string } | undefined,
+): void {
+	appTheme = theme;
+}
+
+export function setSessionNameSource(source: () => string | undefined): void {
+	sessionNameSource = source;
+}
+
+function currentSessionName(): string | undefined {
+	try {
+		return sessionNameSource?.();
+	} catch {
+		// 会话替换/reload 后旧 ctx 失效会拖错；视作无名，回退纯边框。
+		return undefined;
+	}
+}
+
+/**
+ * 顶边框组合：左侧 Working 块（原生样式）+ 填充 + 右侧 dim 会话名。
+ * 放不下（填充 < 2 列）返回 undefined，调用方回退 super 的原生边框。
+ * 纯函数：宽度与 ANSI 均由入参给定，可单测。
+ */
+export function sessionNameBorderLine(opts: {
+	width: number;
+	name: string;
+	status?: string;
+	borderColor: (text: string) => string;
+	dim: (text: string) => string;
+}): string | undefined {
+	const { width, borderColor, dim } = opts;
+	if (width < 20) return undefined;
+	// 名字上限：min(40 列, 40% 宽度)；空名则放弃。
+	const name =
+		visibleWidth(opts.name) > 0
+			? truncateName(opts.name, Math.min(40, Math.floor(width * 0.4)))
+			: "";
+	if (!name) return undefined;
+	const status = opts.status ?? "";
+	const statusWidth = visibleWidth(status);
+	const left = statusWidth > 0 ? borderColor("── ") + status + borderColor(" ") : "";
+	const leftWidth = statusWidth > 0 ? 3 + statusWidth + 1 : 0;
+	const right = borderColor(" ") + dim(name) + borderColor(" ──");
+	const rightWidth = visibleWidth(name) + 4;
+	const fill = width - leftWidth - rightWidth;
+	if (fill < 2) return undefined;
+	return left + borderColor("─".repeat(fill)) + right;
+}
+
+/** 按显示宽度截断（不切 ANSI——名字应为纯文本，此处仅防御）。 */
+function truncateName(name: string, maxWidth: number): string {
+	if (visibleWidth(name) <= maxWidth) return name;
+	let out = "";
+	for (const char of name) {
+		if (visibleWidth(out + char) > maxWidth) break;
+		out += char;
+	}
+	return out.trimEnd();
+}
+
 export class PromptEditor extends CustomEditor {
+	/**
+	 * 顶边框：左侧保留原生 Working 嵌入，右侧追加 dim 会话名（常驻，风格 A 极简）。
+	 * 行数溢出提示（↑ N more 居中）、无会话名、宽度不足时回退原生边框。
+	 */
+	protected override renderTopBorder(width: number, hiddenLineCount: number): string {
+		if (hiddenLineCount > 0 || !config.showSessionName || config.sessionNamePosition !== "border") {
+			return super.renderTopBorder(width, hiddenLineCount);
+		}
+		const name = currentSessionName()?.trim();
+		if (!name) return super.renderTopBorder(width, hiddenLineCount);
+
+		const self = this as unknown as {
+			workingStatusIndicator?: { renderInBorder(width: number): string } | undefined;
+		};
+		// dim 取 app 主题（ctx.ui.theme 注入）；编辑器 theme（EditorTheme）只有 borderColor。
+		const dim = (text: string): string => (appTheme?.fg ? appTheme.fg("dim", text) : text);
+		let status: string | undefined;
+		if (this.embedWorkingStatus && self.workingStatusIndicator) {
+			try {
+				const raw = self.workingStatusIndicator.renderInBorder(Math.max(1, width - 5));
+				if (visibleWidth(raw) > 0) status = raw;
+			} catch {
+				// 指示器会话失效等异常：按空闲态渲染。
+			}
+		}
+		const line = sessionNameBorderLine({
+			width,
+			name,
+			status,
+			borderColor: (text) => this.borderColor(text),
+			dim,
+		});
+		return line ?? super.renderTopBorder(width, hiddenLineCount);
+	}
+
 	render(width: number): string[] {
 		// ❯ + 用户 padding：文本从 userPaddingX+2 列开始。
 		const self = this as unknown as { paddingX: number };
@@ -91,6 +196,12 @@ function releasePromptEditor(ctx: ExtensionContext): void {
  */
 export function applyPromptEditor(ctx: ExtensionContext): void {
 	if (!ctx?.hasUI || typeof ctx.ui?.setEditorComponent !== "function") return;
+	// 会话名渲染需要 app 主题（dim 色）与实时会话名；此处注入，渲染时读取。
+	setSessionNameSource(() => ctx.sessionManager?.getSessionName?.());
+	const editorTheme = (
+		ctx.ui as unknown as { theme?: { fg?: (color: string, text: string) => string } }
+	).theme;
+	setEditorTheme(editorTheme);
 	if (!config.enableEditorPrefix) {
 		releasePromptEditor(ctx);
 		return;

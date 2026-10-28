@@ -32,7 +32,7 @@ pi install git:github.com/KAI-EXT/pi-cc-extensions
 | Claude Code UI        | 工具摘要、折叠展开、rich edit/write diff，以及`on` / `compact` / `off` 三种模式 | `/ccstyle`                                      |
 | Markdown 增强         | Mermaid 方言渲染、圈数字转半角括号                                                         | 自动生效；`enableMarkdownEnhance: false` 关闭   |
 | Fullscreen mode       | 工具卡/group 单击展开与收起、预览、hover 高亮、回到底部按钮                 | `TUIMODE=fullscreen` 或 `--tui-mode fullscreen` |
-| 配置面板              | `Style / Features / UI / Diff / Thinking / Footer / Token Speed` 七页签；Token Speed 页签含 tokenSpeed 可视化编辑（显示模式/图标/计数策略/结束行为/滑动窗口/四档阈值/四档色，provider 覆盖只读展示），Features 页签含 agentSummary 段开关与日期/斜体切换 | `/ccstyle`                                      |
+| 配置面板              | `Style / Features / UI / Diff / Thinking / Footer / Token Speed` 七页签；Token Speed 页签含 tokenSpeed 可视化编辑（显示模式/图标/计数策略/结束行为/滑动窗口/四档阈值/四档色，provider 覆盖只读展示），Features 页签含 agentSummary 段开关与日期/斜体切换；会话名称可显示在输入框顶边框右侧或状态栏目录芯片后 | `/ccstyle`                                      |
 | 上下文检查            | 查看上下文占用，并预览 System prompt、Memory、Skills、Tools definition 和消息内容 | `/context`                                      |
 | Session/Subagent 引用 | 搜索并注入历史 Session 或会话中已有 SubAgent 的有效上下文                             | `@`                                             |
 | 状态栏                | 显示：模型、上下文、缓存、费用、会话 token 统计（`Σ 2.1M ↑ 1.1M ↓ 45k 󰆼 980k`：总量/输入/输出/缓存）、git，并适配 @narumitw/pi-usage 实时显示额度；输出速率按速分档着色（tokenSpeed）；git/缓存图标可关 Nerd Font | `/ccstyle`                              |
@@ -69,6 +69,8 @@ pi install git:github.com/KAI-EXT/pi-cc-extensions
   "showStartupHeader": true,               // 启动头（logo + tips）开关
   "stickyUserMessage": true,               // fullscreen：userMessage 正文首行滚出视口上沿后钉住，直到下一条指令接手
   "scrollButtonMode": "dock",              // fullscreen：dock 独占行 / native Pi 原生浮层
+  "showSessionName": true,                 // 会话名称展示开关
+  "sessionNamePosition": "border",         // border：输入框顶边框右侧（Working 同行）；cwd：状态栏目录芯片后
 
   // diff
   "diffViewMode": "auto",                  // 布局：auto / split / unified

@@ -26,6 +26,9 @@ export type DiffIndicatorMode = "bars" | "classic" | "none";
 export type FooterGitStatsMode = "working" | "branch";
 export type FooterTokenRateMode = "average" | "live";
 export type ScrollButtonMode = "dock" | "native";
+/** 会话名称展示位置：border 输入框顶边框右侧（Working 同行）；cwd 状态栏目录芯片后。 */
+export type SessionNamePosition = "border" | "cwd";
+export const SESSION_NAME_POSITIONS: SessionNamePosition[] = ["border", "cwd"];
 
 export interface ToolDisplayConfig {
 	diffViewMode: DiffViewMode;
@@ -81,6 +84,10 @@ export type Config = {
 	stickyUserMessage: boolean;
 	/** fullscreen 回到底部按钮：扩展 dock 行，或 Pi 原生浮层；两者文案相同。 */
 	scrollButtonMode: ScrollButtonMode;
+	/** 会话名称展示开关；位置由 sessionNamePosition 决定。 */
+	showSessionName: boolean;
+	/** 会话名称展示位置：输入框顶边框右侧（border）或状态栏目录芯片后（cwd）。 */
+	sessionNamePosition: SessionNamePosition;
 	enableSessionReference: boolean;
 	enableSubagentAutocomplete: boolean;
 	enableContextCommand: boolean;
@@ -203,6 +210,8 @@ export const DEFAULT_CONFIG: Config = {
 	showStartupHeader: true,
 	stickyUserMessage: true,
 	scrollButtonMode: "dock",
+	showSessionName: true,
+	sessionNamePosition: "border",
 	enableSessionReference: true,
 	enableSubagentAutocomplete: true,
 	enableContextCommand: false,
@@ -364,6 +373,12 @@ export function normalizeConfig(input: unknown): Config {
 			SCROLL_BUTTON_MODES,
 			DEFAULT_CONFIG.scrollButtonMode,
 		),
+		showSessionName: source.showSessionName !== false,
+		sessionNamePosition: pickEnum(
+			source.sessionNamePosition,
+			SESSION_NAME_POSITIONS,
+			DEFAULT_CONFIG.sessionNamePosition,
+		),
 		enableSessionReference: source.enableSessionReference !== false,
 		enableSubagentAutocomplete: source.enableSubagentAutocomplete !== false,
 		enableContextCommand: source.enableContextCommand !== false,
@@ -501,6 +516,8 @@ export function formatConfigStatus(source: Config = config): string {
 		`startupHeader=${source.showStartupHeader ? "on" : "off"}`,
 		`stickyUserMessage=${source.stickyUserMessage ? "on" : "off"}`,
 		`scrollButton=${source.scrollButtonMode}`,
+		`sessionName=${source.showSessionName ? "on" : "off"}`,
+		`sessionNameAt=${source.sessionNamePosition}`,
 		`sessionRef=${source.enableSessionReference ? "on" : "off"}`,
 		`subagentAuto=${source.enableSubagentAutocomplete ? "on" : "off"}`,
 		`context=${source.enableContextCommand ? "on" : "off"}`,
