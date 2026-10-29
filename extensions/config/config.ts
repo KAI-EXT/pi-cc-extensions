@@ -98,6 +98,10 @@ export type Config = {
 	enableMarkdownEnhance: boolean;
 	/** 输入框 `❯ ` 前缀（占左侧 2 列，颜色随 thinking/bash mode 联动）。 */
 	enableEditorPrefix: boolean;
+	/** 持久化输入历史（方案 003）：捕获+落盘+注入；false 时完全关闭（不捕获不注入）。 */
+	enableInputHistory: boolean;
+	/** 反搜界面可见行数（列表行数 = 预览框总高，含上下边框）。 */
+	inputHistoryVisibleRows: number;
 	enableCustomFooter: boolean;
 	/** footer 输出速率芯片。关则不显示。 */
 	footerTokenRate: boolean;
@@ -154,6 +158,8 @@ export const EXPANDED_INPUT_MAX_LINES_VALUES = ["5", "10", "20", "40", "80"];
 export const EXPANDED_OUTPUT_MAX_LINES_VALUES = ["10", "20", "40", "80", "120"];
 /** 工具摘要里 path/command 等输入的折叠字符数；0 = 只按可用宽度截断。 */
 export const TOOL_LABEL_CLIP_VALUES = ["0", "40", "60", "80", "100", "120", "160"];
+/** 反搜界面可见行数预设。 */
+export const INPUT_HISTORY_ROWS_VALUES = ["6", "8", "10", "12", "16"];
 export const THINKING_PREVIEW_LINES_VALUES = ["0", "1", "3", "5", "10"];
 export const THINKING_ANIMATION_INTERVAL_VALUES = ["40", "60", "90", "120", "180"];
 /** Tools commonly toggled in excludeRenderers via the settings panel. */
@@ -220,6 +226,8 @@ export const DEFAULT_CONFIG: Config = {
 	enableAliases: true,
 	enableMarkdownEnhance: true,
 	enableEditorPrefix: true,
+	enableInputHistory: true,
+	inputHistoryVisibleRows: 8,
 	enableCustomFooter: true,
 	footerTokenRate: true,
 	footerTotalTokens: true,
@@ -290,6 +298,12 @@ function normalizeAgentSummaryKeys(value: unknown): string[] {
 		),
 	];
 	return keys.length > 0 ? keys : [...DEFAULT_CONFIG.agentSummaryKeys];
+}
+
+/** 数值收敛：非有限回落 default，并 clamp 到 [min, max]。 */
+function clampInt(value: number, fallback: number, min: number, max: number): number {
+	if (!Number.isFinite(value)) return fallback;
+	return Math.max(min, Math.min(max, Math.round(value)));
 }
 
 export function normalizeConfig(input: unknown): Config {
@@ -387,6 +401,13 @@ export function normalizeConfig(input: unknown): Config {
 		enableAliases: source.enableAliases !== false,
 		enableMarkdownEnhance: source.enableMarkdownEnhance !== false,
 		enableEditorPrefix: (source.enableEditorPrefix ?? source.enableInputPrompt) !== false, // 兼容旧配置键
+		enableInputHistory: source.enableInputHistory !== false,
+		inputHistoryVisibleRows: clampInt(
+			Number(source.inputHistoryVisibleRows ?? DEFAULT_CONFIG.inputHistoryVisibleRows),
+			DEFAULT_CONFIG.inputHistoryVisibleRows,
+			4,
+			20,
+		),
 		enableCustomFooter: source.enableCustomFooter !== false,
 		footerTokenRate: source.footerTokenRate !== false,
 		footerTotalTokens: source.footerTotalTokens !== false,

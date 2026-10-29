@@ -14,8 +14,9 @@
  * 前缀开 = userPaddingX + 2，关 = userPaddingX。
  */
 import { CustomEditor, type ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { visibleWidth } from "@earendil-works/pi-tui";
+import { matchesKey, visibleWidth } from "@earendil-works/pi-tui";
 import { config } from "../../config/config.ts";
+import { bindHistoryEditor } from "../history/index.ts";
 
 /** `❯ ` 固定 2 列：glyph + 尾随空格。 */
 const PROMPT_GLYPH = "❯";
@@ -99,6 +100,20 @@ function truncateName(name: string, maxWidth: number): string {
 }
 
 export class PromptEditor extends CustomEditor {
+	/** Ctrl+R 反向搜索钩子（history 模块经 bindHistoryEditor 注入回调；为空时不拦截）。 */
+	onReverseSearch?: () => void;
+
+	/**
+	 * Ctrl+R 打开输入历史反向搜索；其余按键全部透传原生编辑器。
+	 */
+	override handleInput(data: string): void {
+		if (this.onReverseSearch && matchesKey(data, "ctrl+r")) {
+			this.onReverseSearch();
+			return;
+		}
+		super.handleInput(data);
+	}
+
 	/**
 	 * 顶边框：左侧保留原生 Working 嵌入，右侧追加 dim 会话名（常驻，风格 A 极简）。
 	 * 行数溢出提示（↑ N more 居中）、无会话名、宽度不足时回退原生边框。
@@ -157,8 +172,12 @@ export class PromptEditor extends CustomEditor {
 
 type EditorFactory = Parameters<ExtensionContext["ui"]["setEditorComponent"]>[0];
 
-const promptEditorFactory: EditorFactory = (tui, theme, keybindings) =>
-	new PromptEditor(tui, theme, keybindings, { embedWorkingStatus: true });
+const promptEditorFactory: EditorFactory = (tui, theme, keybindings) => {
+	const editor = new PromptEditor(tui, theme, keybindings, { embedWorkingStatus: true });
+	// 持久化输入历史（方案 003）：实例创建即注册引用，session_start 注入经此落到本实例。
+	bindHistoryEditor(editor);
+	return editor;
+};
 
 /** 是否正占着插槽；占据前的工厂用于原样还回去。 */
 let active = false;

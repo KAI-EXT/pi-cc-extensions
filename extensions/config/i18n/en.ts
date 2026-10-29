@@ -10,8 +10,7 @@ export const dict = {
 	"tab.thinking": "Thinking",
 	"tab.footer": "Footer",
 	"tab.tokenSpeed": "Token Speed",
-	"hint.main":
-		"  Enter/Space to change · Enter on numbers types a custom value · Tab/Shift+Tab to switch sections · Esc to close",
+	"hint.main": "  Enter/Space to change · Enter on numbers types a custom value · Tab/Shift+Tab to switch sections · Esc to close",
 	"hint.excludeSubmenu": "  Enter/Space to toggle · Esc back to Style",
 	"hint.excludeFooter": "  Esc back to Style settings",
 	"hint.agentSummarySubmenu": "  Enter/Space to toggle · Esc back to Features",
@@ -25,15 +24,14 @@ export const dict = {
 	"input.prompt.currency": "  Cost currency — ISO code:",
 	"input.prompt.rate": "  Cost rate — display units per 1 cost unit:",
 	"input.error.invalid": "Invalid value",
-	"input.error.number": 'Invalid number: "{raw}"',
+	"input.error.number": "Invalid number: \"{raw}\"",
 	"input.error.rate": "Rate must be a positive number",
 	"notify.requiresTui": "/ccstyle requires TUI mode",
 	"notify.updated": "Updated {id}: {value}",
 	"notify.updatedRestart": "Updated {id}: {value} (next restart)",
 	"mode.label": "Mode",
 	"mode.desc.on": "Claude Code style with rich edit/write diffs. Tune diff options below.",
-	"mode.desc.compact":
-		"One summary line per assistant round; edit/write reuse the same Diff preview settings as on.",
+	"mode.desc.compact": "One summary line per assistant round; edit/write reuse the same Diff preview settings as on.",
 	"mode.desc.off": "Pi native tool rendering. Diff options below still apply independently.",
 	"excludeRenderers.label": "Exclude tools",
 	"excludeRenderers.desc.none": "No tools excluded. Enter to toggle common tools.",
@@ -41,20 +39,16 @@ export const dict = {
 	"excludeRenderers.item.desc": "Use Pi native renderer for {name} instead of Claude Code styling.",
 	"excludeRenderers.value.none": "none",
 	"enableSessionReference.label": "Session reference",
-	"enableSessionReference.desc.on":
-		"@ session mentions search & inject referenced session context. Next restart applies.",
+	"enableSessionReference.desc.on": "@ session mentions search & inject referenced session context. Next restart applies.",
 	"enableSessionReference.desc.off": "Session reference disabled.",
 	"enableSubagentAutocomplete.label": "Subagent autocomplete",
-	"enableSubagentAutocomplete.desc.on":
-		"@subagent:[name] mentions suggest agents and inject delegation instructions. Next restart applies.",
+	"enableSubagentAutocomplete.desc.on": "@subagent:[name] mentions suggest agents and inject delegation instructions. Next restart applies.",
 	"enableSubagentAutocomplete.desc.off": "Subagent autocomplete disabled.",
 	"enableContextCommand.label": "Context usage",
-	"enableContextCommand.desc.on":
-		"/context shows context-window distribution with previews. Next restart applies.",
+	"enableContextCommand.desc.on": "/context shows context-window distribution with previews. Next restart applies.",
 	"enableContextCommand.desc.off": "Context command disabled.",
 	"enableAgentSummary.label": "Agent summary",
-	"enableAgentSummary.desc.on":
-		"Append per-round tool stats after each agent turn. Next restart applies.",
+	"enableAgentSummary.desc.on": "Append per-round tool stats after each agent turn. Next restart applies.",
 	"enableAgentSummary.desc.off": "Agent summary disabled.",
 	"agentSummaryKeys.label": "Summary segments",
 	"agentSummaryKeys.desc": "{count}/{total} segments on. Enter to toggle; at least one stays on.",
@@ -66,40 +60,30 @@ export const dict = {
 	"agentSummaryItalic.desc.on": "Summary line renders in italics (Claude Code style).",
 	"agentSummaryItalic.desc.off": "Summary line renders upright.",
 	"enableWorkingMessage.label": "Working message",
-	"enableWorkingMessage.desc.on":
-		"Extend Working... footer with token count and elapsed time. Next restart applies.",
+	"enableWorkingMessage.desc.on": "Extend Working... footer with token count and elapsed time. Next restart applies.",
 	"enableWorkingMessage.desc.off": "Native Working... footer only.",
 	"enableAliases.label": "Aliases",
 	"enableAliases.desc.on": "/clear and /exit aliases enabled. Next restart applies.",
 	"enableAliases.desc.off": "Aliases disabled.",
 	"enableMarkdownEnhance.label": "Markdown enhance",
-	"enableMarkdownEnhance.desc.on":
-		"Mermaid dialects and circled-number conversion. Next restart applies.",
-	"enableMarkdownEnhance.desc.off":
-		"Markdown enhancements off; another extension can own the markdown pass.",
+	"enableMarkdownEnhance.desc.on": "Mermaid dialects and circled-number conversion. Next restart applies.",
+	"enableMarkdownEnhance.desc.off": "Markdown enhancements off; another extension can own the markdown pass.",
 	"expandedInputMaxLines.label": "Expanded input lines",
-	"expandedInputMaxLines.desc":
-		"Max Input section lines in an expanded tool card. Overflow shows click to show more. Default 5.",
+	"expandedInputMaxLines.desc": "Max Input section lines in an expanded tool card. Overflow shows click to show more. Default 5.",
 	"expandedOutputMaxLines.label": "Expanded output lines",
-	"expandedOutputMaxLines.desc":
-		"Max Output section lines in an expanded tool card. Overflow shows click to show more. Default 10.",
+	"expandedOutputMaxLines.desc": "Max Output section lines in an expanded tool card. Overflow shows click to show more. Default 10.",
 	"expandedPreviewMaxLines.label": "Expanded max lines",
-	"expandedPreviewMaxLines.desc":
-		"Max TaskList body lines when expanded. Expanded diffs show every line.",
+	"expandedPreviewMaxLines.desc": "Max TaskList body lines when expanded. Expanded diffs show every line.",
 	"toolLabelClip.label": "Tool label clip",
-	"toolLabelClip.desc":
-		"Max characters for path/command/name in single and grouped tool summaries; 0 fits available width. Enter to type a custom value.",
+	"toolLabelClip.desc": "Max characters for path/command/name in single and grouped tool summaries; 0 fits available width. Enter to type a custom value.",
 	"stickyUserMessage.label": "Sticky user message",
-	"stickyUserMessage.desc.on":
-		"Fullscreen: pin a user message's first line once it scrolls off the top edge, until the next one takes over.",
+	"stickyUserMessage.desc.on": "Fullscreen: pin a user message's first line once it scrolls off the top edge, until the next one takes over.",
 	"stickyUserMessage.desc.off": "User messages scroll normally.",
 	"scrollButtonMode.label": "Scroll button mode",
 	"scrollButtonMode.desc.dock": "Fullscreen: show the extension's dedicated Back to bottom row.",
-	"scrollButtonMode.desc.native":
-		"Fullscreen: show the same Back to bottom text in Pi's native floating overlay.",
+	"scrollButtonMode.desc.native": "Fullscreen: show the same Back to bottom text in Pi's native floating overlay.",
 	"showSessionName.label": "Session name",
-	"showSessionName.desc.on":
-		"Show the session name: right side of the editor top border (the Working line), or after the cwd chip per position.",
+	"showSessionName.desc.on": "Show the session name: right side of the editor top border (the Working line), or after the cwd chip per position.",
 	"showSessionName.desc.off": "Session name hidden.",
 	"sessionNamePosition.label": "Session name position",
 	"sessionNamePosition.desc.border": "Right side of the editor top border (the Working line).",
@@ -108,8 +92,7 @@ export const dict = {
 	"showStartupHeader.desc.on": "Show the custom startup header (logo + tips) on new sessions.",
 	"showStartupHeader.desc.off": "Use Pi's native startup header instead.",
 	"enableEditorPrefix.label": "Editor prefix",
-	"enableEditorPrefix.desc.on":
-		"Show ❯ before the input line; color follows thinking level / bash mode.",
+	"enableEditorPrefix.desc.on": "Show ❯ before the input line; color follows thinking level / bash mode.",
 	"enableEditorPrefix.desc.off": "Plain input line, no ❯ glyph.",
 	"diffViewMode.label": "Diff layout",
 	"diffViewMode.desc.auto": "Auto: split when terminal is wide enough, otherwise unified.",
@@ -120,44 +103,34 @@ export const dict = {
 	"diffIndicatorMode.desc.classic": "Classic +/- gutters on changed lines.",
 	"diffIndicatorMode.desc.none": "No change indicators; rely on color alone.",
 	"diffSplitMinWidth.label": "Split min width",
-	"diffSplitMinWidth.desc":
-		"Minimum terminal width before auto/split layout uses side-by-side columns. Enter to type a custom value.",
+	"diffSplitMinWidth.desc": "Minimum terminal width before auto/split layout uses side-by-side columns. Enter to type a custom value.",
 	"editDiffCollapsedLines.label": "Edit collapsed lines",
-	"editDiffCollapsedLines.desc":
-		"Edit diff body lines before the expand hint (Ctrl+O / click). 0 shows only change counts and the hint.",
+	"editDiffCollapsedLines.desc": "Edit diff body lines before the expand hint (Ctrl+O / click). 0 shows only change counts and the hint.",
 	"writeDiffCollapsedLines.label": "Write collapsed lines",
-	"writeDiffCollapsedLines.desc":
-		"Write-only collapsed body lines. 0 shows ↳ created + expand hint (stats stay on the title). Enter to type a custom value.",
+	"writeDiffCollapsedLines.desc": "Write-only collapsed body lines. 0 shows ↳ created + expand hint (stats stay on the title). Enter to type a custom value.",
 	"diffWordWrap.label": "Diff word wrap",
 	"diffWordWrap.desc.on": "Long diff lines wrap within the panel width.",
 	"diffWordWrap.desc.off": "Long diff lines are truncated to the panel width.",
 	"useSummaryTitlesAsThinkingTitle.label": "Summary title",
-	"useSummaryTitlesAsThinkingTitle.desc":
-		"Use the latest provider summary as the active thinking title.",
+	"useSummaryTitlesAsThinkingTitle.desc": "Use the latest provider summary as the active thinking title.",
 	"previewLines.label": "Preview lines",
 	"previewLines.desc": "Thinking preview lines; 0 hides the preview body.",
 	"animationIntervalMs.label": "Animation interval ms",
 	"animationIntervalMs.desc": "Thinking title animation interval for the next thinking run.",
 	"enableCustomFooter.label": "Status bar",
-	"enableCustomFooter.desc.on":
-		"Custom status bar. Model, context, cache, rate, cost, cwd, git, and plugin chips share one layout.",
-	"enableCustomFooter.desc.off":
-		"Pi native footer restored. Chip layout below still applies when turned on.",
+	"enableCustomFooter.desc.on": "Custom status bar. Model, context, cache, rate, cost, cwd, git, and plugin chips share one layout.",
+	"enableCustomFooter.desc.off": "Pi native footer restored. Chip layout below still applies when turned on.",
 	"footerTokenRate.label": "Token rate",
 	"footerTokenRate.desc.on": "Output rate chip after the cache hit rate. Turn off to hide it.",
 	"footerTokenRate.desc.off": "Output rate chip hidden.",
 	"footerTokenRateMode.label": "Token rate mode",
-	"footerTokenRateMode.desc.live":
-		"Sliding 1s rate while generating (live). Tool waits are excluded. Falls back to the run average between chunks and after the prompt.",
-	"footerTokenRateMode.desc.average":
-		"Average over the whole user prompt (avg), including tool waits. Stays until the next prompt.",
+	"footerTokenRateMode.desc.live": "Sliding 1s rate while generating (live). Tool waits are excluded. Falls back to the run average between chunks and after the prompt.",
+	"footerTokenRateMode.desc.average": "Average over the whole user prompt (avg), including tool waits. Stays until the next prompt.",
 	"footerTokenRateTtft.label": "Token rate TTFT",
-	"footerTokenRateTtft.desc.on":
-		"Append time to first token, e.g. (TTFT: 812ms) or (TTFT: 1.2s). Turn off to show the rate only.",
+	"footerTokenRateTtft.desc.on": "Append time to first token, e.g. (TTFT: 812ms) or (TTFT: 1.2s). Turn off to show the rate only.",
 	"footerTokenRateTtft.desc.off": "Time to first token hidden. The rate chip shows tok/s only.",
 	"footerTotalTokens.label": "Session tokens",
-	"footerTotalTokens.desc.on":
-		"Show session token totals after the cost with icons: Σ total · ↑ input (upload) · ↓ output (download) · cache glyph (read + write).",
+	"footerTotalTokens.desc.on": "Show session token totals after the cost with icons: Σ total · ↑ input (upload) · ↓ output (download) · cache glyph (read + write).",
 	"footerTotalTokens.desc.off": "Session total tokens chip hidden.",
 	"tokenSpeedDisplay.label": "Token speed display",
 	"tokenSpeedDisplay.desc.legacy": "Classic chip: avg/live label + tok/s, TTFT per its own toggle.",
@@ -169,41 +142,30 @@ export const dict = {
 	"tokenSpeedIcon.desc.set": "Glyph prefixing the rate chip, currently {icon}.",
 	"tokenSpeedIcon.desc.none": "No glyph before the rate chip.",
 	"tokenSpeedCountStrategy.label": "Token count strategy",
-	"tokenSpeedCountStrategy.desc.direct":
-		"Count one token per streamed delta. Predictable on English text; overcounts CJK.",
-	"tokenSpeedCountStrategy.desc.estimate":
-		"Estimate tokens from text length (CJK ~1/char, otherwise ~4 chars/token).",
+	"tokenSpeedCountStrategy.desc.direct": "Count one token per streamed delta. Predictable on English text; overcounts CJK.",
+	"tokenSpeedCountStrategy.desc.estimate": "Estimate tokens from text length (CJK ~1/char, otherwise ~4 chars/token).",
 	"tokenSpeedEndTpsBehavior.label": "End-of-stream TPS",
 	"tokenSpeedEndTpsBehavior.desc.last": "When streaming ends, keep the last sliding-window value.",
-	"tokenSpeedEndTpsBehavior.desc.average":
-		"When streaming ends, fall back to the whole-run average.",
+	"tokenSpeedEndTpsBehavior.desc.average": "When streaming ends, fall back to the whole-run average.",
 	"tokenSpeedSlidingWindow.label": "Sliding window ms",
-	"tokenSpeedSlidingWindow.desc":
-		"Live-rate window in ms; wider smooths bursty servers. Config clamps to 100..30000.",
+	"tokenSpeedSlidingWindow.desc": "Live-rate window in ms; wider smooths bursty servers. Config clamps to 100..30000.",
 	"tokenSpeedThreshold.label": "Threshold {tier}",
 	"tokenSpeedThreshold.desc": "Rate tier bound in tok/s; kept strictly ascending by auto-clamping.",
 	"tokenSpeedColor.label": "{tier} tier color",
-	"tokenSpeedColor.desc":
-		"Truecolor for {tier}-tier rate numbers. Enter/Space cycles preset colors.",
+	"tokenSpeedColor.desc": "Truecolor for {tier}-tier rate numbers. Enter/Space cycles preset colors.",
 	"tokenSpeedProviderOverrides.label": "Provider overrides",
-	"tokenSpeedProviderOverrides.desc.none":
-		"No per-provider tokenSpeed overrides. Edit ~/.pi/agent/pi-cc-extensions.json to add them.",
-	"tokenSpeedProviderOverrides.desc.some":
-		"Read-only here: {entries}. Edit the config file to change.",
+	"tokenSpeedProviderOverrides.desc.none": "No per-provider tokenSpeed overrides. Edit ~/.pi/agent/pi-cc-extensions.json to add them.",
+	"tokenSpeedProviderOverrides.desc.some": "Read-only here: {entries}. Edit the config file to change.",
 	"footerCurrency.label": "Cost currency",
-	"footerCurrency.desc":
-		"ISO code for the status-bar cost. Switching currency fills its preset rate. USD clears the rate.",
+	"footerCurrency.desc": "ISO code for the status-bar cost. Switching currency fills its preset rate. USD clears the rate.",
 	"footerCurrencyRate.label": "Cost rate",
-	"footerCurrencyRate.desc":
-		"Display units per 1 USD of cost. Switching currency replaces this. Empty keeps the number and only changes the symbol.",
+	"footerCurrencyRate.desc": "Display units per 1 USD of cost. Switching currency replaces this. Empty keeps the number and only changes the symbol.",
 	"footerNerdIcons.label": "Nerd Font icons",
 	"footerNerdIcons.desc.on": "Git and cache chips use Nerd Font glyphs. Turn off for plain text.",
 	"footerNerdIcons.desc.off": "Git and cache chips use plain text. No Nerd Font required.",
 	"footerGitStatsMode.label": "Git changes",
-	"footerGitStatsMode.desc.working":
-		"Uncommitted net changes relative to HEAD (default). Includes staged and unstaged edits; excludes untracked files.",
-	"footerGitStatsMode.desc.branch":
-		"Net changes since the merge base, including uncommitted edits. Base: origin/HEAD, then local main/master. Untracked files excluded; unavailable stats hidden.",
+	"footerGitStatsMode.desc.working": "Uncommitted net changes relative to HEAD (default). Includes staged and unstaged edits; excludes untracked files.",
+	"footerGitStatsMode.desc.branch": "Net changes since the merge base, including uncommitted edits. Base: origin/HEAD, then local main/master. Untracked files excluded; unavailable stats hidden.",
 	"footerPluginChips.label": "Footer chips",
 	"footerPluginChips.desc": "Arrange footer chips: {summary}. Enter to edit.",
 	"footerChips.item.value.line": "line{n}",
@@ -223,4 +185,16 @@ export const dict = {
 	"value.on": "on",
 	"value.off": "off",
 	"footerChip.totalTokens": "Session total tokens",
+	"enableInputHistory.label": "Input history",
+	"enableInputHistory.desc.on": "Persist prompts to disk and recall them with ↑ after resume, /resume or in new sessions. Requires editor prefix.",
+	"enableInputHistory.desc.off": "No history capture or recall. Existing history file is kept.",
+	"inputHistoryRows.label": "History rows",
+	"inputHistoryRows.desc": "Visible rows in the Ctrl+R reverse-search list (preview box height matches).",
+	"reverseSearch.title": "Search prompts",
+	"reverseSearch.scope.session": "session",
+	"reverseSearch.scope.project": "project",
+	"reverseSearch.scope.everywhere": "everywhere",
+	"reverseSearch.hint": "↑/↓ to navigate · Enter to use · Esc to cancel · ctrl+s to scope",
+	"reverseSearch.placeholder": "Filter history…",
+	"reverseSearch.noMatch": "No matching prompts",
 } as const;

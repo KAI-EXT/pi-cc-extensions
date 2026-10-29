@@ -184,5 +184,17 @@
   "language.desc": "Panel display language. Takes effect immediately for newly rendered text.",
   "value.on": "on",
   "value.off": "off",
-  "footerChip.totalTokens": "Session total tokens"
+  "footerChip.totalTokens": "Session total tokens",
+  "enableInputHistory.label": "Input history",
+  "enableInputHistory.desc.on": "Persist prompts to disk and recall them with ↑ after resume, /resume or in new sessions. Requires editor prefix.",
+  "enableInputHistory.desc.off": "No history capture or recall. Existing history file is kept.",
+  "inputHistoryRows.label": "History rows",
+  "inputHistoryRows.desc": "Visible rows in the Ctrl+R reverse-search list (preview box height matches).",
+  "reverseSearch.title": "Search prompts",
+  "reverseSearch.scope.session": "session",
+  "reverseSearch.scope.project": "project",
+  "reverseSearch.scope.everywhere": "everywhere",
+  "reverseSearch.hint": "↑/↓ to navigate · Enter to use · Esc to cancel · ctrl+s to scope",
+  "reverseSearch.placeholder": "Filter history…",
+  "reverseSearch.noMatch": "No matching prompts"
 }

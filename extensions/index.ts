@@ -11,6 +11,9 @@ import { applyPromptEditor } from "./feature/shell/prompt-editor.ts";
 import piStartupHeader, { installEarlyStartupHeader } from "./feature/shell/startup-header.ts";
 import workingMessage from "./feature/shell/working-message.ts";
 
+// history
+import { installInputHistory } from "./feature/history/index.ts";
+
 // feature
 import agentAutocomplete from "./feature/reference/subagent.ts";
 import agentSummary from "./feature/agent-summary/index.ts";
@@ -38,10 +41,13 @@ export default function (pi: ExtensionAPI): void {
 
 	// 输入框 ❯ 提示符：session_start 时按配置应用；setEditorComponent 是一次性替换。
 	// 引擎口径同场刷新：session_start 的 ctx.model 已含恢复/继承的模型。
+	// 注意：此监听必须先于 installInputHistory 注册——历史注入依赖 applyPromptEditor
+	// 已同步完成 bindHistoryEditor（pi 事件按注册顺序触发）。
 	pi.on("session_start", (_event, ctx) => {
 		refreshTokenSpeedOptions(ctx.model?.provider);
 		applyPromptEditor(ctx);
 	});
+	if (config.enableInputHistory) installInputHistory(pi);
 	// /model 切换或循环选择时重注入，下一条指令的采样即用新 provider 的覆盖块。
 	pi.on("model_select", (event) => refreshTokenSpeedOptions(event.model?.provider));
 

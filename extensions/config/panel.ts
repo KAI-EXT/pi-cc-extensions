@@ -63,6 +63,7 @@ import {
 	SCROLL_BUTTON_MODES,
 	THINKING_ANIMATION_INTERVAL_VALUES,
 	THINKING_PREVIEW_LINES_VALUES,
+	INPUT_HISTORY_ROWS_VALUES,
 	TOOL_LABEL_CLIP_VALUES,
 	WRITE_DIFF_COLLAPSED_LINES_VALUES,
 	updateConfig,
@@ -1043,6 +1044,24 @@ export async function showCcstylePanel(
 			currentValue: config.enableEditorPrefix ? "on" : "off",
 			values: ["on", "off"],
 		};
+		const inputHistorySetting = {
+			id: "enableInputHistory",
+			label: t("enableInputHistory.label"),
+			description: config.enableInputHistory
+				? t("enableInputHistory.desc.on")
+				: t("enableInputHistory.desc.off"),
+			currentValue: config.enableInputHistory ? "on" : "off",
+			values: ["on", "off"],
+		};
+		const inputHistoryRowsSetting = {
+			id: "inputHistoryRows",
+			label: t("inputHistoryRows.label"),
+			description: t("inputHistoryRows.desc"),
+			currentValue: String(config.inputHistoryVisibleRows),
+			values: [...INPUT_HISTORY_ROWS_VALUES],
+			submenu: (_current: string, closeSubmenu: (selected?: string) => void) =>
+				buildNumberInputSubmenu(theme, inputHistoryRowsSetting, closeSubmenu),
+		};
 		const customFooterSetting = {
 			id: "enableCustomFooter",
 			label: t("enableCustomFooter.label"),
@@ -1362,6 +1381,12 @@ export async function showCcstylePanel(
 				: t("enableEditorPrefix.desc.off");
 		});
 		retranslate(() => {
+			inputHistorySetting.label = t("enableInputHistory.label");
+			inputHistorySetting.description = config.enableInputHistory
+				? t("enableInputHistory.desc.on")
+				: t("enableInputHistory.desc.off");
+		});
+		retranslate(() => {
 			customFooterSetting.label = t("enableCustomFooter.label");
 			customFooterSetting.description = customFooterDescription(config.enableCustomFooter);
 		});
@@ -1527,6 +1552,29 @@ export async function showCcstylePanel(
 					? t("enableEditorPrefix.desc.on")
 					: t("enableEditorPrefix.desc.off");
 				editorPrefixChanged = true;
+				ctx.ui.notify(t("notify.updated", { id, value }), "info");
+				return;
+			}
+			if (id === "enableInputHistory") {
+				const enabled = value === "on";
+				updateConfig({ enableInputHistory: enabled });
+				inputHistorySetting.currentValue = enabled ? "on" : "off";
+				inputHistorySetting.description = enabled
+					? t("enableInputHistory.desc.on")
+					: t("enableInputHistory.desc.off");
+				ctx.ui.notify(t("notify.updated", { id, value }), "info");
+				return;
+			}
+			if (id === "inputHistoryRows") {
+				updateConfig({
+					inputHistoryVisibleRows: pickPositiveInt(
+						value,
+						DEFAULT_CONFIG.inputHistoryVisibleRows,
+						4,
+						20,
+					),
+				});
+				inputHistoryRowsSetting.currentValue = String(config.inputHistoryVisibleRows);
 				ctx.ui.notify(t("notify.updated", { id, value }), "info");
 				return;
 			}
@@ -1735,6 +1783,8 @@ export async function showCcstylePanel(
 					scrollButtonSetting,
 					startupHeaderSetting,
 					editorPrefixSetting,
+					inputHistorySetting,
+					inputHistoryRowsSetting,
 				],
 			},
 			{

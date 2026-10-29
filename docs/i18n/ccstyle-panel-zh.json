@@ -184,5 +184,17 @@
   "language.desc": "面板显示语言。对之后新渲染的文本立即生效。",
   "value.on": "on",
   "value.off": "off",
-  "footerChip.totalTokens": "会话 Token 总量"
+  "footerChip.totalTokens": "会话 Token 总量",
+  "enableInputHistory.label": "输入历史",
+  "enableInputHistory.desc.on": "输入落盘持久化；resume、/resume 与新会话均可 ↑ 召回（需编辑器前缀）。",
+  "enableInputHistory.desc.off": "不捕获、不召回输入历史；已生成的历史文件保留。",
+  "inputHistoryRows.label": "历史行数",
+  "inputHistoryRows.desc": "Ctrl+R 反搜列表可见行数（右侧预览框高度随行数对应）。",
+  "reverseSearch.title": "搜索提示词",
+  "reverseSearch.scope.session": "当前会话",
+  "reverseSearch.scope.project": "当前项目",
+  "reverseSearch.scope.everywhere": "所有项目",
+  "reverseSearch.hint": "↑/↓ 选择 · Enter 使用 · Esc 取消 · ctrl+s 切换范围",
+  "reverseSearch.placeholder": "过滤历史…",
+  "reverseSearch.noMatch": "没有匹配的提示词"
 }
