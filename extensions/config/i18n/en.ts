@@ -20,6 +20,7 @@ export const dict = {
 	"hint.currencySubmenu": "  Enter to apply · Esc back to Footer",
 	"hint.rateSubmenu": "  Enter to apply · empty clears · Esc back to Footer",
 	"input.hint.generic": "  Enter to apply · Esc to go back",
+	"input.prompt.rateLabel": "  {label} — text (empty to hide):",
 	"input.hint.rate": "  Enter to apply · empty clears conversion · Esc to go back",
 	"input.prompt.number": "  {label} — custom value:",
 	"input.prompt.currency": "  Cost currency — ISO code:",
@@ -180,6 +181,10 @@ export const dict = {
 	"tokenSpeedSlidingWindow.label": "Sliding window ms",
 	"tokenSpeedSlidingWindow.desc":
 		"Live-rate window in ms; wider smooths bursty servers. Config clamps to 100..30000.",
+	"tokenSpeedLiveLabel.label": "Live label",
+	"tokenSpeedLiveLabel.desc": "Rate prefix in live mode; empty hides it.",
+	"tokenSpeedAvgLabel.label": "Average label",
+	"tokenSpeedAvgLabel.desc": "Rate prefix in average mode; empty hides it.",
 	"tokenSpeedThreshold.label": "Threshold {tier}",
 	"tokenSpeedThreshold.desc": "Rate tier bound in tok/s; kept strictly ascending by auto-clamping.",
 	"tokenSpeedColor.label": "{tier} tier color",

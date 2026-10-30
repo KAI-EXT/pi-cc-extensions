@@ -222,14 +222,14 @@ test("summaryMarkdown：rate 段按 tokenSpeed 四档真彩着色，且不再整
 		tokensPerSec: 42,
 		endedAt: 1_000,
 	};
-	// 42 tok/s → fast 档 #00ff88 → truecolor 0;255;136；收尾 \x1b[0m 与摘要行其它数字同一口径
+	// 42 tok/s → fast 档 #00ff88 → truecolor 0;255;136；收尾 \x1b[0m 与摘要行其它数字同一口径；avg 前缀沿用 avgLabel 默认
 	assert.equal(
 		summaryMarkdown(
 			data,
 			{ success: "", failed: "" },
 			{ keys: ["rate"], tokenSpeed: DEFAULT_TOKEN_SPEED },
 		),
-		"> \x1b[38;2;0;255;136m42\x1b[0m tok/s",
+		"> avg \x1b[38;2;0;255;136m42\x1b[0m tok/s",
 	);
 	// 16 tok/s → medium 档 #ffaa00
 	assert.match(
@@ -238,7 +238,7 @@ test("summaryMarkdown：rate 段按 tokenSpeed 四档真彩着色，且不再整
 			{ success: "", failed: "" },
 			{ keys: ["rate"], tokenSpeed: DEFAULT_TOKEN_SPEED },
 		),
-		/\x1b\[38;2;255;170;0m16\x1b\[0m tok\/s/,
+		/avg \x1b\[38;2;255;170;0m16\x1b\[0m tok\/s/,
 	);
 	// success 色存在时已带档色的 rate 段不被二次补色，后续段照常补色
 	const mixed = summaryMarkdown(
@@ -246,7 +246,7 @@ test("summaryMarkdown：rate 段按 tokenSpeed 四档真彩着色，且不再整
 		{ success: "\x1b[32m", failed: "" },
 		{ keys: ["rate", "done"], tokenSpeed: DEFAULT_TOKEN_SPEED },
 	);
-	assert.match(mixed, /\x1b\[38;2;0;255;136m42\x1b\[0m tok\/s · done/);
+	assert.match(mixed, /avg \x1b\[38;2;0;255;136m42\x1b\[0m tok\/s · done/);
 	assert.doesNotMatch(mixed, /\x1b\[32m\x1b\[38;2/);
 });
 

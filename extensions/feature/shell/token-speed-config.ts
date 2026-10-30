@@ -42,6 +42,10 @@ export interface TokenSpeedConfig {
 	colors: TokenSpeedColors;
 	/** 默认 ⚡；空串 = 无图标。 */
 	icon: string;
+	/** legacy 芯片 live 模式速率前缀（如 "live"）；空串 = 无前缀。 */
+	liveLabel: string;
+	/** legacy 芯片 average 模式速率前缀（默认 "avg"，与 liveLabel 对齐）；空串 = 无前缀。 */
+	avgLabel: string;
 	countStrategy: TokenSpeedCountStrategy;
 	endTpsBehavior: TokenSpeedEndTpsBehavior;
 	/** live 滑动窗口毫秒，范围 100..30000（30s 硬顶）。 */
@@ -74,8 +78,10 @@ export const DEFAULT_TOKEN_SPEED: TokenSpeedConfig = {
 		blazing: "#44ddff",
 	},
 	icon: "⚡",
+	liveLabel: "live",
+	avgLabel: "avg",
 	countStrategy: "estimate",
-	endTpsBehavior: "average",
+	endTpsBehavior: "last",
 	slidingWindow: 1000,
 	updateInterval: 0,
 	formatDuration: false,
@@ -185,6 +191,8 @@ export function normalizeTokenSpeedOverride(input: unknown): TokenSpeedOverrideI
 	const displayColors = pickHexSubset(source.displayColors, DISPLAY_COLOR_KEYS);
 	if (displayColors) override.displayColors = displayColors;
 	if (typeof source.icon === "string") override.icon = source.icon;
+	if (typeof source.liveLabel === "string") override.liveLabel = source.liveLabel;
+	if (typeof source.avgLabel === "string") override.avgLabel = source.avgLabel;
 	const display = pickEnumOption(source.display, TOKEN_SPEED_DISPLAYS);
 	if (display) override.display = display;
 	const countStrategy = pickEnumOption(source.countStrategy, TOKEN_SPEED_COUNT_STRATEGIES);
@@ -219,6 +227,9 @@ export function normalizeTokenSpeed(input: unknown): TokenSpeedConfig {
 		thresholds: normalizeThresholds(source.thresholds),
 		colors: normalizeColors(source.colors),
 		icon: typeof source.icon === "string" ? source.icon : DEFAULT_TOKEN_SPEED.icon,
+		liveLabel:
+			typeof source.liveLabel === "string" ? source.liveLabel : DEFAULT_TOKEN_SPEED.liveLabel,
+		avgLabel: typeof source.avgLabel === "string" ? source.avgLabel : DEFAULT_TOKEN_SPEED.avgLabel,
 		countStrategy: pickEnumValue(
 			source.countStrategy,
 			TOKEN_SPEED_COUNT_STRATEGIES,
@@ -260,6 +271,8 @@ export function resolveTokenSpeed(
 		colors: { ...base.colors, ...override.colors },
 		displayColors: { ...base.displayColors, ...override.displayColors },
 		icon: override.icon ?? base.icon,
+		liveLabel: override.liveLabel ?? base.liveLabel,
+		avgLabel: override.avgLabel ?? base.avgLabel,
 		countStrategy: override.countStrategy ?? base.countStrategy,
 		endTpsBehavior: override.endTpsBehavior ?? base.endTpsBehavior,
 		slidingWindow: override.slidingWindow ?? base.slidingWindow,

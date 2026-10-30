@@ -65,7 +65,7 @@ hex 格式（`#RRGGBB`），**逐色校验**：写错的那个色回落默认，
 
 | 值 | 效果示例 |
 |---|---|
-| `legacy`（默认） | 沿用默认格式：`25 tok/s`（live 模式为 `live 30 tok/s`，由顶层 `footerTokenRateMode` 决定；`footerTokenRateTtft` 控制是否带 TTFT） |
+| `legacy`（默认） | 沿用默认格式：`25 tok/s`（live 模式为 `live 30 tok/s`，前缀由 `liveLabel`/`avgLabel` 控制；`footerTokenRateTtft` 控制是否带 TTFT） |
 | `tps` | `25 tok/s` |
 | `ttft` | `25 tok/s (TTFT: 450ms)` |
 | `stats` | `25 tok/s (150 tok in 6.0s)` |
@@ -104,8 +104,19 @@ hex 格式（`#RRGGBB`），**逐色校验**：写错的那个色回落默认，
 
 | 值 | 行为 |
 |---|---|
-| `average`（默认） | 定格为整段平均（总 token ÷ 总耗时） |
-| `last` | 定格为流结束时最后一个滑动窗口读数（看收尾速度） |
+| `average` | 定格为整段平均（总 token ÷ 总耗时） |
+| `last`（默认） | 定格为流结束时最后一个滑动窗口读数（看收尾速度） |
+
+### `liveLabel` / `avgLabel` — legacy 芯片速率前缀
+
+`legacy` 显示模式下速率数字前的文字标签：
+
+| 字段 | 默认 | 作用 |
+|---|---|---|
+| `liveLabel` | `"live"` | `live` 模式前缀，如 `live 30 tok/s`；设 `""` 隐藏 |
+| `avgLabel` | `"avg"` | `average` 模式前缀，如 `avg 25 tok/s`；设 `""` 隐藏 |
+
+仅作用于 `legacy` 形态；`tps`/`stats`/`full` 等新形态不带前缀。文本可在 `/ccstyle` → Token 速率页签编辑（留空隐藏）。
 
 ### `slidingWindow` — 滑动窗口（毫秒）
 
@@ -243,8 +254,10 @@ hex 格式（`#RRGGBB`），**逐色校验**：写错的那个色回落默认，
 | `displayColors` | object | `{}` | 后缀三段分色（count/elapsed/ttft），非 legacy 生效 |
 | `icon` | string | `"⚡"` | 芯片前缀图标；空串 = 无图标 |
 | `countStrategy` | enum | `"estimate"` | `estimate` 估算 / `direct` 每 delta 1 token |
-| `endTpsBehavior` | enum | `"average"` | 流结束定格：整段平均 / 最后窗口值 |
+| `endTpsBehavior` | enum | `"last"` | 流结束定格：整段平均 / 最后窗口值 |
 | `slidingWindow` | number | `1000` | live 窗口毫秒，100–30000 |
+| `liveLabel` | string | `"live"` | legacy 芯片 live 模式速率前缀，空串隐藏 |
+| `avgLabel` | string | `"avg"` | legacy 芯片 average 模式速率前缀，空串隐藏 |
 | `updateInterval` | number | `0` | **已失效保留键**（pi 已合帧） |
 | `formatDuration` | boolean | `false` | 耗时人类可读化（`1m 32.3s`） |
 | `providerOverrides` | object | `{}` | 按 provider 精确串覆盖子集 |

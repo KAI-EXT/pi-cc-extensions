@@ -115,7 +115,9 @@ Renderer snapshots for `on` / `compact` modes: [default](./docs/tool-render-exam
     },
     "icon": "⚡",                            // chip icon (default ⚡); empty = no icon; or 🔥/💨/🚀/any char
     "countStrategy": "estimate",             // estimate (chars/4, CJK counts 1 per char) / direct (1 delta=1 token, CJK distortion is on you)
-    "endTpsBehavior": "average",             // average: freeze to the whole-run average / last: freeze to the last window value
+    "endTpsBehavior": "last",                // last: freeze to the last window value (default) / average: freeze to the whole-run average
+    "liveLabel": "live",                     // legacy chip live-mode rate prefix; empty hides it
+    "avgLabel": "avg",                       // legacy chip average-mode rate prefix; empty hides it, defaults to shown like liveLabel
     "slidingWindow": 1000,                   // live sliding window in ms, range 100..30000 (30s hard cap)
     "updateInterval": 0,                     // kept but inert: the pi TUI render pipeline already coalesces frames (dedup + 16ms frame throttle)
     "formatDuration": false,                 // duration formatting: 92.3s → 1m 32s (the elapsed suffix in stats/full modes)

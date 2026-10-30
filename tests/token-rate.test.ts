@@ -70,6 +70,16 @@ describe("token rate", { concurrency: false }, () => {
 		);
 	});
 
+	test("formatTokenRate prefix overrides the default label; empty hides", () => {
+		// 显式 prefix 完全接管：live 也可隐藏，average 可加标
+		assert.equal(formatTokenRate(42, 0, "live", true, undefined, ""), "42 tok/s");
+		assert.equal(formatTokenRate(42, 0, "average", true, undefined, "avg"), "avg 42 tok/s");
+		assert.equal(formatTokenRate(42, 0, "live", true, undefined, "LIVE"), "LIVE 42 tok/s");
+		// 不传保持旧行为（live 固定 live，average 无前缀）
+		assert.equal(formatTokenRate(42, 0, "live"), "live 42 tok/s");
+		assert.equal(formatTokenRate(42, 0, "average"), "42 tok/s");
+	});
+
 	test("currentRunStats counts tokens like totalTokens and excludes tool pauses from elapsed", () => {
 		resetTokenRate();
 		assert.deepEqual(currentRunStats(1_000), { tokens: 0, elapsedMs: 0 }, "无活动指令时为 0");

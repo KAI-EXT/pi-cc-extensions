@@ -519,6 +519,7 @@ const createCustomFooterFactory =
 							config.footerTokenRateMode,
 							config.footerTokenRateTtft,
 							paintRate,
+							config.footerTokenRateMode === "live" ? speed.liveLabel : speed.avgLabel,
 						)
 					: formatTokenRateDisplay(
 							speed,

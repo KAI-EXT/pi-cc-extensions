@@ -436,6 +436,8 @@ function buildValueInputSubmenu(
 	const input = new Input();
 	let error = "";
 	input.setValue(options.initial);
+	// 光标到末尾：在初始值上追加编辑，避免新输入插在开头产生脏值（Input.setValue 后光标停在 0）。
+	(input as unknown as { cursor: number }).cursor = input.getValue().length;
 	input.onSubmit = (value: string) => {
 		const raw = value.trim();
 		const next = options.accept(raw);
@@ -604,6 +606,10 @@ function tokenSpeedPatch(
 			return { endTpsBehavior: value as TokenSpeedEndTpsBehavior };
 		case "tokenSpeedSlidingWindow":
 			return { slidingWindow: Number(value) };
+		case "tokenSpeedLiveLabel":
+			return { liveLabel: value };
+		case "tokenSpeedAvgLabel":
+			return { avgLabel: value };
 		default:
 			return undefined;
 	}
@@ -1147,6 +1153,47 @@ export async function showCcstylePanel(
 			() => t("tokenSpeedSlidingWindow.desc"),
 			{ values: [...TOKEN_SPEED_WINDOW_PRESETS] },
 		);
+		// 速率前缀行：文本输入子面板，空串 = 隐藏（显示为 "-"，同 footerCurrencyRate 的空值惯例）。
+		const tokenSpeedLabelRow = (
+			id: "tokenSpeedLiveLabel" | "tokenSpeedAvgLabel",
+			label: string,
+			describe: () => string,
+			field: "liveLabel" | "avgLabel",
+		) => {
+			const row = tokenSpeedRow(id, label, () => config.tokenSpeed[field] || "-", describe);
+			row.setting.submenu = (_current: string, closeSubmenu: (selected?: string) => void) => {
+				nestedSubmenuOpen = true;
+				nestedHintKey = "input.hint.generic";
+				return buildValueInputSubmenu(
+					theme,
+					{
+						prompt: t("input.prompt.rateLabel", { label: row.setting.label }),
+						initial: config.tokenSpeed[field],
+						hint: t("input.hint.generic"),
+						// 空串合法（隐藏前缀），原样提交。
+						accept: (raw) => raw,
+					},
+					(selected) => {
+						nestedSubmenuOpen = false;
+						nestedHintKey = "";
+						closeSubmenu(selected);
+					},
+				);
+			};
+			return row;
+		};
+		const tokenSpeedLiveLabelRow = tokenSpeedLabelRow(
+			"tokenSpeedLiveLabel",
+			t("tokenSpeedLiveLabel.label"),
+			() => t("tokenSpeedLiveLabel.desc"),
+			"liveLabel",
+		);
+		const tokenSpeedAvgLabelRow = tokenSpeedLabelRow(
+			"tokenSpeedAvgLabel",
+			t("tokenSpeedAvgLabel.label"),
+			() => t("tokenSpeedAvgLabel.desc"),
+			"avgLabel",
+		);
 		// 阈值行同 Diff 页签数值交互：Space 循环预设，Enter 进数字输入子面板（写回时自动收敛升序）。
 		const tokenSpeedThresholdRows = TOKEN_SPEED_TIERS.map((tier) => {
 			const row = tokenSpeedRow(
@@ -1193,6 +1240,8 @@ export async function showCcstylePanel(
 			tokenSpeedCountRow,
 			tokenSpeedEndTpsRow,
 			tokenSpeedWindowRow,
+			tokenSpeedLiveLabelRow,
+			tokenSpeedAvgLabelRow,
 			...tokenSpeedThresholdRows,
 			...tokenSpeedColorRows,
 			tokenSpeedOverridesRow,

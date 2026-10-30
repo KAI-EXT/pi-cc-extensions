@@ -274,7 +274,9 @@ function summaryParts(data: AgentSummaryData, options: AgentSummaryViewConfig): 
 					const paint = speed
 						? (value: string) => `${tokenSpeedRateAnsi(data.tokensPerSec, speed)}${value}\x1b[0m`
 						: undefined;
-					parts.push(formatTokenRate(data.tokensPerSec, 0, "average", false, paint));
+					parts.push(
+						formatTokenRate(data.tokensPerSec, 0, "average", false, paint, speed?.avgLabel),
+					);
 				}
 				break;
 			}

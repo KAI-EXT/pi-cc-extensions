@@ -115,7 +115,9 @@ pi install git:github.com/KAI-EXT/pi-cc-extensions
     },
     "icon": "⚡",                            // 芯片图标（默认 ⚡）；空串 = 无图标；可设 🔥/💨/🚀 或任意字符
     "countStrategy": "estimate",             // estimate（chars/4 估算，CJK 按 1 字 1 token）/ direct（1 delta=1 token，CJK 失真自担）
-    "endTpsBehavior": "average",             // average：流结束定格整段平均 / last：定格最后窗口值
+    "endTpsBehavior": "last",                // last：流结束定格最后窗口值（默认）/ average：定格整段平均
+    "liveLabel": "live",                     // legacy 芯片 live 模式速率前缀；空串隐藏
+    "avgLabel": "avg",                       // legacy 芯片 average 模式速率前缀；空串隐藏，与 liveLabel 对齐默认显示
     "slidingWindow": 1000,                   // live 瞬时窗口毫秒，范围 100..30000（30s 硬顶）
     "updateInterval": 0,                     // 保留键不再生效：pi TUI 渲染管线已合帧（去重 + 16ms 帧节流），节流不再需要
     "formatDuration": false,                 // 耗时格式化：92.3s → 1m 32s（stats/full 模式的耗时后缀）

@@ -77,7 +77,17 @@ test("enum fields fall back when invalid", () => {
 	assert.equal(normalizeTokenSpeed({ countStrategy: "direct" }).countStrategy, "direct");
 	assert.equal(normalizeTokenSpeed({ countStrategy: "bogus" }).countStrategy, "estimate");
 	assert.equal(normalizeTokenSpeed({ endTpsBehavior: "last" }).endTpsBehavior, "last");
-	assert.equal(normalizeTokenSpeed({ endTpsBehavior: 7 }).endTpsBehavior, "average");
+	assert.equal(normalizeTokenSpeed({ endTpsBehavior: 7 }).endTpsBehavior, "last");
+});
+
+test("rate label strings pass through; empty keeps, junk falls back", () => {
+	assert.equal(normalizeTokenSpeed({ liveLabel: "LIVE" }).liveLabel, "LIVE");
+	assert.equal(normalizeTokenSpeed({ avgLabel: "avg" }).avgLabel, "avg");
+	// 空串合法（隐藏前缀）
+	assert.equal(normalizeTokenSpeed({ liveLabel: "" }).liveLabel, "");
+	// 非法类型回落默认（live 默认 "live"，avg 默认 "avg"）
+	assert.equal(normalizeTokenSpeed({ liveLabel: 7 }).liveLabel, DEFAULT_TOKEN_SPEED.liveLabel);
+	assert.equal(normalizeTokenSpeed({ avgLabel: 7 }).avgLabel, DEFAULT_TOKEN_SPEED.avgLabel);
 });
 
 test("sliding window clamps into range, junk falls back; updateInterval keeps the key but is ignored", () => {
@@ -246,11 +256,11 @@ test("tokenSpeed normalization keeps other config keys untouched", () => {
 test("config status carries a tokenSpeed summary", () => {
 	assert.equal(
 		formatTokenSpeedSummary(DEFAULT_TOKEN_SPEED),
-		"tokenSpeed=[0/15/30/45] estimate avg w1000",
+		"tokenSpeed=[0/15/30/45] estimate last w1000",
 	);
 	assert.match(
 		formatConfigStatus({ ...DEFAULT_CONFIG }),
-		/tokenSpeed=\[0\/15\/30\/45\] estimate avg w1000/,
+		/tokenSpeed=\[0\/15\/30\/45\] estimate last w1000/,
 	);
 	assert.match(
 		formatConfigStatus(

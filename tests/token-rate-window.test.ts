@@ -12,11 +12,11 @@ import {
 
 // 模块级状态，必须串行；并行会互相清掉速率与口径。
 describe("token rate sliding window", { concurrency: false }, () => {
-	test("setTokenSpeedOptions defaults to estimate/average/1000 and clamps the window", () => {
+	test("setTokenSpeedOptions defaults to estimate/last/1000 and clamps the window", () => {
 		setTokenSpeedOptions();
 		assert.deepEqual(getTokenSpeedOptions(), {
 			countStrategy: "estimate",
-			endTpsBehavior: "average",
+			endTpsBehavior: "last",
 			slidingWindow: 1_000,
 		});
 		setTokenSpeedOptions({

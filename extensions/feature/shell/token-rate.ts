@@ -54,7 +54,7 @@ export interface TokenSpeedEngineOptions {
 
 const DEFAULT_SPEED_OPTIONS: TokenSpeedEngineOptions = {
 	countStrategy: "estimate",
-	endTpsBehavior: "average",
+	endTpsBehavior: "last",
 	slidingWindow: 1_000,
 };
 
@@ -293,21 +293,24 @@ export function formatTtft(ttftMs: number): string {
 }
 
 /** `1.2k tok/s (TTFT: 812ms)`，live 模式带 `live ` 前缀；无数据显示空串，未出首 token 或 showTtft 为 false 时无括号段。
- *  paintValue 可选传入取色函数（P3 footer/摘要行共用 tokenSpeedRateAnsi），只包住速率数字。 */
+ *  paintValue 可选传入取色函数（P3 footer/摘要行共用 tokenSpeedRateAnsi），只包住速率数字。
+ *  prefix 显式传入时覆盖默认标签（空串 = 无前缀，tokenSpeed.liveLabel/avgLabel）；不传保持旧行为。 */
 export function formatTokenRate(
 	rate: number,
 	ttftMs = 0,
 	mode: TokenRateMode = "average",
 	showTtft = true,
 	paintValue?: (value: string) => string,
+	prefix?: string,
 ): string {
 	if (!Number.isFinite(rate) || rate <= 0) return "";
 	const plain = rate >= 1000 ? `${(rate / 1000).toFixed(1)}k` : `${Math.round(rate)}`;
 	const value = paintValue ? paintValue(plain) : plain;
 	const ttft =
 		showTtft && Number.isFinite(ttftMs) && ttftMs > 0 ? ` (TTFT: ${formatTtft(ttftMs)})` : "";
-	// average 为默认口径不加标签；live 保留标签以区分瞬时口径。
-	const label = mode === "live" ? "live " : "";
+	// average 为默认口径不加标签；live 保留标签以区分瞬时口径；prefix 显式传入时完全由调用方控制。
+	const label =
+		prefix !== undefined ? (prefix ? `${prefix} ` : "") : mode === "live" ? "live " : "";
 	return `${label}${value} tok/s${ttft}`;
 }
 

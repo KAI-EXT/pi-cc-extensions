@@ -66,8 +66,8 @@ function rowNav(panel: Panel, total: number) {
 	};
 }
 
-/** Token Speed 页签行数（tokenSpeed 配置族 14 行）。 */
-const TOKEN_SPEED_ROWS = 14;
+/** Token Speed 页签行数（tokenSpeed 配置族 16 行）。 */
+const TOKEN_SPEED_ROWS = 16;
 /** Features 页签行数：7 条原有 + 3 条 agentSummary。 */
 const FEATURE_ROWS = 10;
 
@@ -112,6 +112,34 @@ test("Token speed icon 行 none 与图标互转（none ↔ 空串）", async () 
 	await close;
 });
 
+test("速率前缀行文本输入写回（live 显文字 / avg 留空隐藏）", async () => {
+	resetTokenSpeed();
+	const { panel, notices, close } = await openPanel();
+	sendTabs(panel, 6);
+	const nav = rowNav(panel, TOKEN_SPEED_ROWS);
+	nav(5); // Live label，默认 live
+	panel.handleInput("\r"); // 开文本输入子面板，输入框初始为当前值 "live"（光标在末尾）
+	for (let i = 0; i < 4; i++) panel.handleInput("\x7f"); // 退格清空
+	panel.handleInput("L");
+	panel.handleInput("I");
+	panel.handleInput("V");
+	panel.handleInput("\r"); // 提交
+	assert.equal(config.tokenSpeed.liveLabel, "LIV");
+	assert.equal(
+		JSON.parse(readFileSync(CONFIG_PATH, "utf8")).tokenSpeed.liveLabel,
+		"LIV",
+		"updateConfig 必须落盘",
+	);
+	nav(6); // Avg label，默认 avg
+	panel.handleInput("\r");
+	for (let i = 0; i < 3; i++) panel.handleInput("\x7f"); // 清空 "avg"
+	panel.handleInput("\r"); // 提交空串 = 隐藏
+	assert.equal(config.tokenSpeed.avgLabel, "");
+	panel.handleInput("\x1b");
+	await close;
+	assert.ok(notices.includes("已更新 tokenSpeedLiveLabel：LIV"));
+});
+
 test("countStrategy / endTpsBehavior / slidingWindow 行循环写回", async () => {
 	resetTokenSpeed();
 	const { panel, close } = await openPanel();
@@ -122,7 +150,7 @@ test("countStrategy / endTpsBehavior / slidingWindow 行循环写回", async () 
 	assert.equal(config.tokenSpeed.countStrategy, "direct");
 	nav(3); // End-of-stream TPS
 	panel.handleInput(" ");
-	assert.equal(config.tokenSpeed.endTpsBehavior, "last");
+	assert.equal(config.tokenSpeed.endTpsBehavior, "average"); // 默认 last，循环切到 average
 	nav(4); // Sliding window ms
 	panel.handleInput(" ");
 	assert.equal(config.tokenSpeed.slidingWindow, 3000);
@@ -136,7 +164,7 @@ test("阈值行预设循环写回并自动收敛保持严格升序", async () =>
 	const { panel, close } = await openPanel();
 	sendTabs(panel, 6);
 	const nav = rowNav(panel, TOKEN_SPEED_ROWS);
-	nav(8); // Threshold blazing
+	nav(10); // Threshold blazing
 	panel.handleInput(" "); // 40 → 45
 	assert.deepEqual(config.tokenSpeed.thresholds, {
 		slow: 10,
@@ -144,13 +172,13 @@ test("阈值行预设循环写回并自动收敛保持严格升序", async () =>
 		fast: 30,
 		blazing: 45,
 	});
-	nav(7); // Threshold fast
+	nav(9); // Threshold fast
 	panel.handleInput(" "); // 30 → 40
 	panel.handleInput(" "); // → 50
 	panel.handleInput(" "); // → 60
 	panel.handleInput(" "); // → 20，低于 medium 收敛为 21
 	assert.equal(config.tokenSpeed.thresholds.fast, 21);
-	nav(5); // Threshold slow
+	nav(7); // Threshold slow
 	panel.handleInput(" "); // 10 → 15
 	panel.handleInput(" "); // 15 → 20，超过 medium-1 收敛为 19
 	assert.equal(config.tokenSpeed.thresholds.slow, 19);
@@ -165,10 +193,10 @@ test("颜色行预设循环写回，预设外自定义色从首个预设继续",
 	const { panel, close } = await openPanel();
 	sendTabs(panel, 6);
 	const nav = rowNav(panel, TOKEN_SPEED_ROWS);
-	nav(9); // Slow tier color，默认 #ff4444
+	nav(11); // Slow tier color，默认 #ff4444
 	panel.handleInput(" ");
 	assert.equal(config.tokenSpeed.colors.slow, "#ff8844");
-	nav(10); // Medium tier color，自定义色不在预设里
+	nav(12); // Medium tier color，自定义色不在预设里
 	panel.handleInput(" ");
 	assert.equal(config.tokenSpeed.colors.medium, "#ff4444");
 	panel.handleInput("\x1b");
@@ -180,7 +208,7 @@ test("Provider overrides 行只读：Enter/Space 不改配置", async () => {
 	config.tokenSpeed.providerOverrides = { openai: { display: "tps", slidingWindow: 2000 } };
 	const { panel, close } = await openPanel();
 	sendTabs(panel, 6);
-	rowNav(panel, TOKEN_SPEED_ROWS)(13); // Provider overrides
+	rowNav(panel, TOKEN_SPEED_ROWS)(15); // Provider overrides
 	const before = JSON.stringify(config.tokenSpeed.providerOverrides);
 	panel.handleInput("\r");
 	panel.handleInput(" ");
