@@ -197,11 +197,7 @@ test("visibleRows: 预览框总高与列表行数对应", () => {
 });
 
 test("鼠标：wheel 滚动选中、press 点击选中、click 确认使用", () => {
-	const entries = [
-		entry(50, "oldest"),
-		entry(20, "middle"),
-		entry(1, "newest"),
-	];
+	const entries = [entry(50, "oldest"), entry(20, "middle"), entry(1, "newest")];
 	const s = setup(entries);
 	const ev = (type: string, y: number, extra: Record<string, unknown> = {}) =>
 		({
@@ -227,26 +223,51 @@ test("鼠标：wheel 滚动选中、press 点击选中、click 确认使用", ()
 	// press：点击 body 第一数据行（y = BODY_OFFSET 2 → index 0 oldest）
 	s.component.handleMouse(ev("press", 2));
 	assert.ok(renderBody().includes("> 50m ago"), "press 选中 oldest");
-	// click 同位置 → 确认使用
+	// 同一次单击的 click（pi-tui 先 press 后 click）：只确认选中，不触发 done
+	s.component.handleMouse(ev("click", 2));
+	assert.equal(s.done(), null, "首击 click 不确认");
+	assert.ok(renderBody().includes("> 50m ago"), "选中仍在 oldest");
+	// 同项再击（新一次 press+click，press 未改选中）→ 确认使用
+	s.component.handleMouse(ev("press", 2));
 	s.component.handleMouse(ev("click", 2));
 	assert.equal(s.done(), "oldest");
 });
 
 test("鼠标：click 列表区域外（body 偏移之上）不触发", () => {
 	const s = setup([entry(1, "only")]);
-	s.component.handleMouse({ type: "click", button: "left", x: 0, y: 0, screenX: 0, screenY: 0, width: 150, height: 20, shift: false, alt: false, ctrl: false } as Parameters<ReverseSearch["handleMouse"]>[0]);
+	s.component.handleMouse({
+		type: "click",
+		button: "left",
+		x: 0,
+		y: 0,
+		screenX: 0,
+		screenY: 0,
+		width: 150,
+		height: 20,
+		shift: false,
+		alt: false,
+		ctrl: false,
+	} as Parameters<ReverseSearch["handleMouse"]>[0]);
 	assert.equal(s.done(), null);
 });
 
 test("hover：move 高亮行 + 预览跟随；不改键盘选中；出界清除", () => {
-	const entries = [
-		entry(30, "oldest-entry"),
-		entry(20, "hover-target"),
-		entry(1, "newest-entry"),
-	];
+	const entries = [entry(30, "oldest-entry"), entry(20, "hover-target"), entry(1, "newest-entry")];
 	const s = setup(entries);
 	const ev = (type: string, y: number, button = "none") =>
-		({ type, button, x: 0, y, screenX: 0, screenY: 0, width: 150, height: 20, shift: false, alt: false, ctrl: false }) as Parameters<ReverseSearch["handleMouse"]>[0];
+		({
+			type,
+			button,
+			x: 0,
+			y,
+			screenX: 0,
+			screenY: 0,
+			width: 150,
+			height: 20,
+			shift: false,
+			alt: false,
+			ctrl: false,
+		}) as Parameters<ReverseSearch["handleMouse"]>[0];
 	const renderBody = () => s.renderBody();
 
 	// 初始选中最新（newest），预览显示选中条目
@@ -273,8 +294,63 @@ test("hover：move 高亮行 + 预览跟随；不改键盘选中；出界清除"
 
 test("hover：查询变化时清除 hover", () => {
 	const s = setup([entry(10, "abc"), entry(5, "abd")]);
-	s.component.handleMouse({ type: "move", button: "none", x: 0, y: 2, screenX: 0, screenY: 0, width: 150, height: 20, shift: false, alt: false, ctrl: false } as Parameters<ReverseSearch["handleMouse"]>[0]);
+	s.component.handleMouse({
+		type: "move",
+		button: "none",
+		x: 0,
+		y: 2,
+		screenX: 0,
+		screenY: 0,
+		width: 150,
+		height: 20,
+		shift: false,
+		alt: false,
+		ctrl: false,
+	} as Parameters<ReverseSearch["handleMouse"]>[0]);
 	s.component.handleInput("e");
 	const out = s.renderBody();
 	assert.ok(!out.includes("\x1b[48;2;"), "查询变化后 hover 清除");
+});
+
+test("打开反搜：条目超出一屏时窗口贴底，定位最新一条", () => {
+	const entries = Array.from({ length: 12 }, (_, i) =>
+		entry(i + 1, `item-${String(i + 1).padStart(2, "0")}`),
+	);
+	const s = setup(entries);
+	const rows = s.renderBody().split("\n");
+	assert.ok(!s.renderBody().includes("item-12"), "最旧条目在窗口外（贴底而非贴顶）");
+	const row01 = rows.find((l) => l.includes(">") && l.includes("item-01"));
+	assert.ok(row01?.includes(">"), "选中行定位在最新一条");
+});
+
+test("ctrl+s 切 scope：project/everywhere 均定位最新一条", async () => {
+	const entries = [
+		entry(10, "old-10", "s-old"),
+		entry(9, "old-09", "s-old"),
+		entry(8, "old-08", "s-old"),
+		entry(7, "old-07", "s-old"),
+		entry(6, "old-06", "s-old"),
+		entry(5, "old-05", "s-old"),
+		entry(4, "old-04", "s-old"),
+		entry(3, "old-03", "s-old"),
+		entry(2, "new-02"),
+		entry(1, "new-01"),
+	];
+	const s = setup(entries);
+	// → project：10 条超一屏，贴底且选中最新 new-01
+	s.component.handleInput("\x13");
+	let body = s.renderBody();
+	assert.ok(
+		body.split("\n").some((l) => l.includes(">") && l.includes("new-01")),
+		"project 选中最新一条",
+	);
+	assert.ok(!body.includes("old-10"), "project 窗口贴底，最旧在窗外");
+	// → everywhere：惰性加载完成后选中最新 everywhere-only
+	s.component.handleInput("\x13");
+	await new Promise((r) => setTimeout(r, 10));
+	body = s.renderBody();
+	assert.ok(
+		body.split("\n").some((l) => l.includes(">") && l.includes("everywhere-only")),
+		"everywhere 选中最新一条",
+	);
 });

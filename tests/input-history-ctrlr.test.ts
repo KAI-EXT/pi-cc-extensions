@@ -122,6 +122,54 @@ test("ctrl+r: bind 时注入回调；触发后打开反搜并把选择载入编�
 	assert.equal(editorText, "beta command", "选择结果写回编辑器");
 });
 
+test("ctrl+r: 会话内新捕获的条目立即可见（不依赖 session_start 快照）", async (t) => {
+	const dir = setup();
+	const previous = config.enableInputHistory;
+	config.enableInputHistory = true;
+	t.after(() => {
+		config.enableInputHistory = previous;
+		rmSync(dir, { recursive: true, force: true });
+	});
+
+	const { events, pi } = mockPi();
+	installInputHistory(pi as unknown as Parameters<typeof installInputHistory>[0]);
+
+	// 快照前已有 1 条旧历史 → session_start 会把它缓存为快照
+	events.get("input")?.({ type: "input", text: "old command", source: "interactive" }, mockCtx());
+	await new Promise((r) => setTimeout(r, 50));
+
+	let editorText: string | undefined;
+	const ctx = mockCtx({
+		getEditorText: () => "delta", // 编辑器已有文本作为初始过滤词
+		setEditorText: (text: string) => {
+			editorText = text;
+		},
+		custom: (factory: Function) =>
+			new Promise<string | null>((resolve) => {
+				const component = factory(
+					{ requestRender: () => {} },
+					{ fg: (_c: string, t: string) => t },
+					{},
+					(value: string | null) => resolve(value),
+				) as ReverseSearch;
+				component.handleInput("\r");
+			}),
+	});
+	const editor = spyEditor();
+	events.get("session_start")?.({ type: "session_start", reason: "startup" }, ctx);
+	bindHistoryEditor(editor);
+	await new Promise((r) => setTimeout(r, 30));
+
+	// 会话内新捕获：只落盘，不进 session_start 快照
+	events.get("input")?.({ type: "input", text: "delta command", source: "interactive" }, mockCtx());
+	await new Promise((r) => setTimeout(r, 50));
+
+	// 反搜必须看到新条目：过滤词 "delta" 仅匹配它；若复用旧快照则无匹配 → done(null)
+	editor.onReverseSearch?.();
+	await new Promise((r) => setTimeout(r, 30));
+	assert.equal(editorText, "delta command", "会话内新条目出现在反搜列表");
+});
+
 test("ctrl+r: enableInputHistory=false 时不打开反搜", async (t) => {
 	const dir = setup();
 	const previous = config.enableInputHistory;

@@ -186,7 +186,7 @@
   "value.off": "off",
   "footerChip.totalTokens": "会话 Token 总量",
   "enableInputHistory.label": "输入历史",
-  "enableInputHistory.desc.on": "输入落盘持久化；resume、/resume 与新会话均可 ↑ 召回（需编辑器前缀）。",
+  "enableInputHistory.desc.on": "输入落盘持久化；resume、/resume 与新会话均可 ↑ 召回（需编辑器前缀）。重新开启需重启生效。",
   "enableInputHistory.desc.off": "不捕获、不召回输入历史；已生成的历史文件保留。",
   "inputHistoryRows.label": "历史行数",
   "inputHistoryRows.desc": "Ctrl+R 反搜列表可见行数（右侧预览框高度随行数对应）。",

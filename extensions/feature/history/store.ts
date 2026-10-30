@@ -131,8 +131,8 @@ export function appendEntry(cwd: string, entry: HistoryEntry): Promise<void> {
 }
 
 /**
- * seed 专用：一次性写入初始历史（旧→新顺序），meta 首行 + `.tmp` 原子 rename，
- * 防两窗口同时首启交错；并发 seed 产生的重复行由读取侧去重兑底。
+ * seed 专用：一次性写入初始历史（旧→新顺序），meta 首行以 `wx` 独占创建，
+ * 防两窗口同时首启时截断覆盖对方条目；并发 seed 产生的重复行由读取侧去重兑底。
  */
 export async function writeInitialEntries(cwd: string, entries: HistoryEntry[]): Promise<void> {
 	const file = historyFilePath(cwd);
@@ -147,12 +147,19 @@ export async function writeInitialEntries(cwd: string, entries: HistoryEntry[]):
 				return;
 			}
 			await mkdir(dirname(file), { recursive: true });
-			// meta 首行（空 seed 也要建文件，标记已聚合过）
-			await writeFile(
-				file,
-				`${JSON.stringify({ type: "meta", project: cwd, createdAt: Date.now() })}\n`,
-				"utf-8",
-			);
+			// meta 首行（空 seed 也要建文件，标记已聚合过）；`wx` 防多窗口竞态：
+			// 双检后另一窗口若已建文件（可能已含条目），截断写会静默清空其内容。
+			try {
+				await writeFile(
+					file,
+					`${JSON.stringify({ type: "meta", project: cwd, createdAt: Date.now() })}\n`,
+					{ encoding: "utf-8", flag: "wx" },
+				);
+			} catch {
+				// EEXIST：另一窗口已建文件，改追加而非覆盖
+				for (const entry of entries) await appendEntryInner(cwd, entry);
+				return;
+			}
 			for (const entry of entries) await appendEntryInner(cwd, entry);
 		})
 		.catch(() => {

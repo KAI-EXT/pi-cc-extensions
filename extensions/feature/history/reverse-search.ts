@@ -75,6 +75,9 @@ export class ReverseSearch implements Component {
 	private everywhereEntries: HistoryEntry[] | undefined;
 	private loadingEverywhere = false;
 	private selectedIndex = 0;
+	/** 最近一次 press 是否改变了选中：pi-tui 同一物理单击会连发 press+click，
+	 *  首击的 click 只负责确认选中，同项再击（press 未改选中）才确认使用。 */
+	private pressChangedSelection = false;
 	/** 鼠标悬停行（displayEntries 索引）；预览框跟随 hover，离开列表区清除。 */
 	private hoverIndex: number | undefined;
 	private readonly header: Text;
@@ -88,8 +91,9 @@ export class ReverseSearch implements Component {
 		this.query = options.initialQuery.trim();
 		this.header = new Text("", 1, 0);
 		this.hint = new Text("", 1, 0);
-		// 默认选中最后一行（最新）；displayEntries 为时间正序
+		// 默认选中最后一行（最新）；displayEntries 为时间正序，窗口贴底使最新行首屏可见
 		this.selectedIndex = Math.max(0, this.displayEntries().length - 1);
+		this.resetWindow(this.displayEntries().length);
 		this.refreshHeader();
 		this.refreshHint();
 	}
@@ -269,7 +273,8 @@ export class ReverseSearch implements Component {
 
 	/**
 	 * 鼠标（对齐 pi-tui SelectList 语义；仅 fullscreen 等启用鼠标上报的模式会产生事件）：
-	 * wheel 滚动选中；press 点击选中；click 同项再次点击确认使用（done）。hover 不改选中。
+	 * wheel 滚动选中；press 点击选中；同项再击（新一次 press+click 且选中未变）才确认使用（done）。
+	 * pi-tui 对同一次单击先发 press 再发 click，故首击的 click 不得触发 done。hover 不改选中。
 	 * 列表数据行的组件局部行号 = event.y - BODY_OFFSET。
 	 */
 	handleMouse(event: TuiMouseEvent): TuiMouseEventResult | undefined {
@@ -304,12 +309,19 @@ export class ReverseSearch implements Component {
 		if (event.button !== "left" || (event.type !== "press" && event.type !== "click"))
 			return undefined;
 		if (event.type === "press") {
-			if (this.selectedIndex !== itemIndex) {
+			this.pressChangedSelection = this.selectedIndex !== itemIndex;
+			if (this.pressChangedSelection) {
 				this.selectedIndex = itemIndex;
 				this.clampWindow(entries.length);
 				this.options.tui.requestRender();
 			}
 			this.hoverIndex = itemIndex;
+			return { handled: true, focus: true };
+		}
+		// 同一次单击的 click（press 刚改过选中）：只确认选中，不触发 done
+		if (this.pressChangedSelection) {
+			this.pressChangedSelection = false;
+			this.selectedIndex = itemIndex;
 			return { handled: true, focus: true };
 		}
 		this.selectedIndex = itemIndex;
@@ -372,6 +384,12 @@ export class ReverseSearch implements Component {
 
 	invalidate(): void {}
 
+	/** scope 变化/惰性数据到位后：定位最新一条并贴底（与打开时一致）。 */
+	private jumpToLatest(): void {
+		this.selectedIndex = Math.max(0, this.displayEntries().length - 1);
+		this.resetWindow(this.displayEntries().length);
+	}
+
 	private switchScope(next: HistoryScope): void {
 		if (this.scope === next) return;
 		this.scope = next;
@@ -388,11 +406,11 @@ export class ReverseSearch implements Component {
 				})
 				.finally(() => {
 					this.loadingEverywhere = false;
-					this.resetWindow(this.displayEntries().length);
+					this.jumpToLatest();
 					this.options.tui.requestRender();
 				});
 		}
-		this.resetWindow(this.displayEntries().length);
+		this.jumpToLatest();
 		this.options.tui.requestRender();
 	}
 }

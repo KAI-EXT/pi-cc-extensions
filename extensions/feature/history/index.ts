@@ -83,13 +83,19 @@ function sessionIdOf(ctx: ExtensionContext): string | undefined {
 /** 最近一次 session_start 的 ctx：Ctrl+R 打开反搜时使用（每次 session_start 刷新，不跨会话滞留）。 */
 let lastSessionCtx: ExtensionContext | undefined;
 
+/** 重入守卫：对话框打开或读取历史期间忽略再次 Ctrl+R（编辑器仍收键，防叠加对话框）。 */
+let reverseSearchOpen = false;
+
 /** Ctrl+R 反向搜索：当前项目预取 + 全项目惰性；选择后 setEditorText 载入编辑器。 */
 async function openReverseSearch(): Promise<void> {
 	const ctx = lastSessionCtx;
-	if (!ctx?.hasUI || !config.enableInputHistory) return;
+	if (!ctx?.hasUI || !config.enableInputHistory || reverseSearchOpen) return;
+	reverseSearchOpen = true;
 	try {
-		const currentEntries =
-			cachedEntries.length > 0 ? cachedEntries : await readRecent(ctx.cwd, READ_LIMIT);
+		// 每次打开都重读最新：cachedEntries 只是 session_start 快照，会话内新捕获的
+		// 条目不会进入其中，复用旧快照会让反搜列表缺少本会话新输入（尾部 64KB 读取很快）。
+		const currentEntries = await readRecent(ctx.cwd, READ_LIMIT);
+		cachedEntries = currentEntries;
 		const initialQuery = ctx.ui.getEditorText().trim();
 		const texts: ReverseSearchTexts = {
 			title: t("reverseSearch.title"),
@@ -126,9 +132,10 @@ async function openReverseSearch(): Promise<void> {
 			});
 		});
 		if (result) ctx.ui.setEditorText(result);
-	} catch (err) {
+	} catch {
 		// 反搜失败静默（编辑器保持原文本）
-		console.error("[dbg] openReverseSearch error:", err);
+	} finally {
+		reverseSearchOpen = false;
 	}
 }
 

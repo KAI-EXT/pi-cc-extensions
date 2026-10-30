@@ -186,7 +186,7 @@
   "value.off": "off",
   "footerChip.totalTokens": "Session total tokens",
   "enableInputHistory.label": "Input history",
-  "enableInputHistory.desc.on": "Persist prompts to disk and recall them with ↑ after resume, /resume or in new sessions. Requires editor prefix.",
+  "enableInputHistory.desc.on": "Persist prompts to disk and recall them with ↑ after resume, /resume or in new sessions. Requires editor prefix. Re-enabling takes effect after restart.",
   "enableInputHistory.desc.off": "No history capture or recall. Existing history file is kept.",
   "inputHistoryRows.label": "History rows",
   "inputHistoryRows.desc": "Visible rows in the Ctrl+R reverse-search list (preview box height matches).",

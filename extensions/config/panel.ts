@@ -1562,7 +1562,12 @@ export async function showCcstylePanel(
 				inputHistorySetting.description = enabled
 					? t("enableInputHistory.desc.on")
 					: t("enableInputHistory.desc.off");
-				ctx.ui.notify(t("notify.updated", { id, value }), "info");
+				// 关闭即时生效（监听器每次事件重读开关）；重开需重启：
+				// installInputHistory 仅在扩展加载时按开关注册一次。
+				ctx.ui.notify(
+					t(enabled ? "notify.updatedRestart" : "notify.updated", { id, value }),
+					"info",
+				);
 				return;
 			}
 			if (id === "inputHistoryRows") {

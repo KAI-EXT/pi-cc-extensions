@@ -107,7 +107,9 @@ export class PromptEditor extends CustomEditor {
 	 * Ctrl+R 打开输入历史反向搜索；其余按键全部透传原生编辑器。
 	 */
 	override handleInput(data: string): void {
-		if (this.onReverseSearch && matchesKey(data, "ctrl+r")) {
+		// 功能关闭时不拦截 Ctrl+R（避免吞键导致原生行为失效）；
+		// openReverseSearch 内部另有同条件守卫与重入保护。
+		if (this.onReverseSearch && config.enableInputHistory && matchesKey(data, "ctrl+r")) {
 			this.onReverseSearch();
 			return;
 		}
