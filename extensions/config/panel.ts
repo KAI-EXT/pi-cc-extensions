@@ -1153,6 +1153,11 @@ export async function showCcstylePanel(
 			() => t("tokenSpeedSlidingWindow.desc"),
 			{ values: [...TOKEN_SPEED_WINDOW_PRESETS] },
 		);
+		// 同阈值行：Space 循环预设，Enter 进数字输入子面板（写回经 normalizeTokenSpeed 夹紧 100..30000）。
+		tokenSpeedWindowRow.setting.submenu = (
+			_current: string,
+			closeSubmenu: (selected?: string) => void,
+		) => buildNumberInputSubmenu(theme, tokenSpeedWindowRow.setting, closeSubmenu);
 		// 速率前缀行：文本输入子面板，空串 = 隐藏（显示为 "-"，同 footerCurrencyRate 的空值惯例）。
 		const tokenSpeedLabelRow = (
 			id: "tokenSpeedLiveLabel" | "tokenSpeedAvgLabel",
