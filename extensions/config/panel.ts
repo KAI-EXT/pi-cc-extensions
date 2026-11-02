@@ -12,6 +12,7 @@ import {
 	clearCustomFooter,
 	getFooterStatusSnapshot,
 	refreshFooterGitStats,
+	requestFooterRender,
 } from "../feature/shell/footer.ts";
 import {
 	FOOTER_CURRENCY_PRESETS,
@@ -1454,6 +1455,10 @@ export async function showCcstylePanel(
 				: t("enableInputHistory.desc.off");
 		});
 		retranslate(() => {
+			inputHistoryRowsSetting.label = t("inputHistoryRows.label");
+			inputHistoryRowsSetting.description = t("inputHistoryRows.desc");
+		});
+		retranslate(() => {
 			customFooterSetting.label = t("enableCustomFooter.label");
 			customFooterSetting.description = customFooterDescription(config.enableCustomFooter);
 		});
@@ -1585,7 +1590,7 @@ export async function showCcstylePanel(
 				footerTotalTokensSetting.description = enabled
 					? t("footerTotalTokens.desc.on")
 					: t("footerTotalTokens.desc.off");
-				refreshFooterGitStats();
+				requestFooterRender();
 				ctx.ui.notify(t("notify.updated", { id, value }), "info");
 				return;
 			}
@@ -1611,7 +1616,9 @@ export async function showCcstylePanel(
 				sessionNameSetting.description = enabled
 					? t("showSessionName.desc.on")
 					: t("showSessionName.desc.off");
-				refreshFooterGitStats();
+				// 会话名同时渲染在 footer 芯片与编辑器顶边框（PromptEditor.renderTopBorder），
+				// 需无条件重绘：refreshFooterGitStats 在 git-stats 值不变时会 no-op。
+				requestFooterRender();
 				ctx.ui.notify(t("notify.updated", { id, value }), "info");
 				return;
 			}
@@ -1622,7 +1629,7 @@ export async function showCcstylePanel(
 					config.sessionNamePosition === "border"
 						? t("sessionNamePosition.desc.border")
 						: t("sessionNamePosition.desc.cwd");
-				refreshFooterGitStats();
+				requestFooterRender();
 				ctx.ui.notify(t("notify.updated", { id, value }), "info");
 				return;
 			}
@@ -1653,14 +1660,9 @@ export async function showCcstylePanel(
 				return;
 			}
 			if (id === "inputHistoryRows") {
-				updateConfig({
-					inputHistoryVisibleRows: pickPositiveInt(
-						value,
-						DEFAULT_CONFIG.inputHistoryVisibleRows,
-						4,
-						20,
-					),
-				});
+				// 4..20 夹紧与非法值回落由 updateConfig → normalizeConfig 统一处理（共享常量），
+				// 此处不再 pre-clamp 以免边界漂移。
+				updateConfig({ inputHistoryVisibleRows: Number(value) });
 				inputHistoryRowsSetting.currentValue = String(config.inputHistoryVisibleRows);
 				ctx.ui.notify(t("notify.updated", { id, value }), "info");
 				return;

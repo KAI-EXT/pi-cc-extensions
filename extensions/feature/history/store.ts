@@ -71,12 +71,8 @@ export function historyFilePath(cwd: string): string {
 /** 跨调用串行化：同一文件的追加按调用顺序落盘，防同进程乱序。 */
 const writeChains = new Map<string, Promise<void>>();
 
-/**
- * 追加一条历史。fire-and-forget：调用方（index.ts）不 await；返回的 promise 已自吞
- * 错误（永不 reject），测试可 await 它同步落盘。首次创建文件时写入 meta 首行
- * （`wx` 标志防多窗口竞态双写，EEXIST 视为已初始化）。
- */
-/** 追加执行体（不走链）：seed 的链上下文中直接调用，避免链内再排队造成死锁。 */
+/** 追加执行体（不走链）：seed 的链上下文中直接调用，避免链内再排队造成死锁。
+ *  错误向上抛给调用方处理（不同于 appendEntry 的自吞），无串行化保证。 */
 async function appendEntryInner(cwd: string, entry: HistoryEntry): Promise<void> {
 	const file = historyFilePath(cwd);
 	await mkdir(dirname(file), { recursive: true });
@@ -102,6 +98,11 @@ async function appendEntryInner(cwd: string, entry: HistoryEntry): Promise<void>
 	await appendFile(file, line, "utf-8");
 }
 
+/**
+ * 追加一条历史。fire-and-forget：调用方（index.ts）不 await；返回的 promise 已自吞
+ * 错误（永不 reject），测试可 await 它同步落盘。首次创建文件时写入 meta 首行
+ * （`wx` 标志防多窗口竞态双写，EEXIST 视为已初始化）。
+ */
 /**
  * 追加一条历史。fire-and-forget：调用方（index.ts）不 await；返回的 promise 已自吞
  * 错误（永不 reject），测试可 await 它同步落盘。首次创建文件时写入 meta 首行
@@ -244,7 +245,9 @@ function parseLines(lines: string[]): HistoryEntry[] {
 		};
 		if (record.type === "meta") continue;
 		if (typeof record.display !== "string" || record.display.length === 0) continue;
-		const timestamp = typeof record.timestamp === "number" ? record.timestamp : 0;
+		// 坏行：缺数字时间戳的行无法定位时序（排最旧却会被显示为"刚刚"），直接跳过。
+		if (typeof record.timestamp !== "number") continue;
+		const timestamp = record.timestamp;
 		entries.push({
 			display: record.display,
 			sessionId: typeof record.sessionId === "string" ? record.sessionId : undefined,

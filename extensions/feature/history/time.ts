@@ -31,10 +31,14 @@ export function truncateVisible(text: string, maxWidth: number): string {
 	if (maxWidth <= 0) return "";
 	if (visibleWidth(text) <= maxWidth) return text;
 	if (maxWidth === 1) return "…";
+	// 运行宽度累加：避免每字符重扫累计前缀的 O(n²)（反搜每次按键全量重渲染长条目）。
 	let out = "";
+	let currentWidth = 0;
 	for (const char of text) {
-		if (visibleWidth(out + char) > maxWidth - 1) break;
+		const charWidth = visibleWidth(char);
+		if (currentWidth + charWidth > maxWidth - 1) break;
 		out += char;
+		currentWidth += charWidth;
 	}
 	return `${out}…`;
 }
@@ -60,13 +64,17 @@ export function wrapVisible(text: string, width: number, maxLines: number): stri
 			continue;
 		}
 		let current = "";
+		let currentWidth = 0;
 		for (const char of paragraph) {
-			if (visibleWidth(current + char) > width) {
+			const charWidth = visibleWidth(char);
+			if (currentWidth + charWidth > width) {
 				lines.push(current);
 				if (lines.length >= maxLines) break;
 				current = char;
+				currentWidth = charWidth;
 			} else {
 				current += char;
+				currentWidth += charWidth;
 			}
 		}
 		if (lines.length < maxLines && current.length > 0) lines.push(current);

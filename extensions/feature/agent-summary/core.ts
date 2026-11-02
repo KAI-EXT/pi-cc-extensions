@@ -299,8 +299,10 @@ export function summaryMarkdown(
 	if (parts.length === 0) return "";
 	// 数字/计数用 success 色，失败段用 failed 色；已自带档色的段（rate）不再二次补色。
 	// /g：段内所有数字都要上色（tokens 段的 ↓、tools 各计数、done 的日期时间等）。
+	// 型号码段（🤖）内的数字是标识符（glm-5.3-flash）而非指标，跳过补色。
 	const paintPart = (part: string) => {
 		if (part.includes("\x1b[")) return part;
+		if (part.startsWith("🤖")) return part;
 		const code = part.startsWith("✗") ? colors.failed : colors.success;
 		if (!code) return part;
 		return part.replace(/(\d+(?:\.\d+)?k?)/g, `${code}$1\x1b[0m`);

@@ -305,11 +305,9 @@ function normalizeAgentSummaryKeys(value: unknown): string[] {
 	return keys.length > 0 ? keys : [...DEFAULT_CONFIG.agentSummaryKeys];
 }
 
-/** 数值收敛：非有限回落 default，并 clamp 到 [min, max]。 */
-function clampInt(value: number, fallback: number, min: number, max: number): number {
-	if (!Number.isFinite(value)) return fallback;
-	return Math.max(min, Math.min(max, Math.round(value)));
-}
+/** inputHistoryVisibleRows 收敛边界：normalizeConfig 与面板 handler 共用，防漂移。 */
+export const INPUT_HISTORY_ROWS_MIN = 4;
+export const INPUT_HISTORY_ROWS_MAX = 20;
 
 export function normalizeConfig(input: unknown): Config {
 	const source = (input && typeof input === "object" ? input : {}) as Record<string, unknown>;
@@ -407,11 +405,11 @@ export function normalizeConfig(input: unknown): Config {
 		enableMarkdownEnhance: source.enableMarkdownEnhance !== false,
 		enableEditorPrefix: (source.enableEditorPrefix ?? source.enableInputPrompt) !== false, // 兼容旧配置键
 		enableInputHistory: source.enableInputHistory !== false,
-		inputHistoryVisibleRows: clampInt(
-			Number(source.inputHistoryVisibleRows ?? DEFAULT_CONFIG.inputHistoryVisibleRows),
+		inputHistoryVisibleRows: pickPositiveInt(
+			source.inputHistoryVisibleRows,
 			DEFAULT_CONFIG.inputHistoryVisibleRows,
-			4,
-			20,
+			INPUT_HISTORY_ROWS_MIN,
+			INPUT_HISTORY_ROWS_MAX,
 		),
 		enableCustomFooter: source.enableCustomFooter !== false,
 		footerTokenRate: source.footerTokenRate !== false,
@@ -557,6 +555,8 @@ export function formatConfigStatus(source: Config = config): string {
 		`aliases=${source.enableAliases ? "on" : "off"}`,
 		`markdownEnhance=${source.enableMarkdownEnhance ? "on" : "off"}`,
 		`editorPrefix=${source.enableEditorPrefix ? "on" : "off"}`,
+		`inputHistory=${source.enableInputHistory ? "on" : "off"}`,
+		`inputHistoryRows=${source.inputHistoryVisibleRows}`,
 		`footer=${source.enableCustomFooter ? "on" : "off"}`,
 		`footerTokenRate=${source.footerTokenRate ? "on" : "off"}`,
 		`footerTotalTokens=${source.footerTotalTokens ? "on" : "off"}`,

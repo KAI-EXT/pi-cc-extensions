@@ -87,7 +87,7 @@
   "showSessionName.desc.on": "显示会话名称：输入框顶边框右侧（Working 同行），或状态栏目录标签后（按位置设置）。",
   "showSessionName.desc.off": "会话名称已隐藏。",
   "sessionNamePosition.label": "会话名称位置",
-  "sessionNamePosition.desc.border": "输入框顶边框右侧（Working 同行）。",
+  "sessionNamePosition.desc.border": "输入框顶边框右侧（Working 同行）。需编辑器前缀。",
   "sessionNamePosition.desc.cwd": "状态栏目录标签之后。",
   "showStartupHeader.label": "启动横幅",
   "showStartupHeader.desc.on": "新会话显示自定义启动横幅（logo + 提示）。",

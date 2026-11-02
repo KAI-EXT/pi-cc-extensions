@@ -105,8 +105,19 @@ export function configuredMcpServers(options: {
 	return names;
 }
 
+/** pi API 未导出工具/命令列表类型，仅鸭子类型访问所需字段。 */
+interface McpCommandLike {
+	name?: string;
+	sourceInfo?: { path?: string };
+}
+
+interface McpApiLike {
+	getCommands?: () => McpCommandLike[];
+	getAllTools?: () => unknown[];
+}
+
 /** 注册了 `/mcp` 的都是内置 MCP；别的扩展接管时它自己会写状态标签。 */
-export function builtinMcpOwnsCommand(commands: readonly any[]): boolean {
+export function builtinMcpOwnsCommand(commands: readonly McpCommandLike[]): boolean {
 	const mcpCommands = (commands ?? []).filter((command) => command?.name === MCP_STATUS_KEY);
 	return (
 		mcpCommands.length > 0 &&
@@ -115,7 +126,10 @@ export function builtinMcpOwnsCommand(commands: readonly any[]): boolean {
 }
 
 /** footer 渲染用：当前标签文案（不含 nerd 图标），不适用时返回 undefined。 */
-export function buildMcpChip(ctx: any, api: any): string | undefined {
+export function buildMcpChip(
+	ctx: { cwd?: unknown; isProjectTrusted?: () => boolean },
+	api?: McpApiLike,
+): string | undefined {
 	try {
 		// 工具与命令列表在 pi API 上，ctx 只提供 cwd / trust
 		if (!builtinMcpOwnsCommand(api?.getCommands?.() ?? [])) return undefined;

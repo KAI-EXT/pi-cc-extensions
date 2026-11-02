@@ -249,6 +249,12 @@ let refreshCurrentGitStats: ((reset?: boolean) => void) | undefined;
 export function refreshFooterGitStats(): void {
 	refreshCurrentGitStats?.(true);
 }
+
+/** 无条件请求 footer 所在 TUI 重绘：配置切换（会话名/芯片显隐等）需立即反映时用；
+ *  与 refreshFooterGitStats 不同，git-stats 值不变时也会重绘。 */
+export function requestFooterRender(): void {
+	currentTui?.requestRender();
+}
 let refreshCurrentUsage: (() => void) | undefined;
 let refreshCurrentMcpChip: (() => void) | undefined;
 /** 工具/命令列表在 pi API 上，而 footer 工厂只拿得到 ctx，加载时记下来。 */

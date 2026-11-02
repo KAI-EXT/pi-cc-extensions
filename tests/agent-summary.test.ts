@@ -406,3 +406,35 @@ test("agent-summary 注册 renderer，agent_end 输出引用块", async () => {
 		undefined,
 	);
 });
+
+test("补色：/g 段内所有数字上色；🤖 型号码段跳过", () => {
+	const data: AgentSummaryData = {
+		commands: 3,
+		reads: 2,
+		edits: 1,
+		writes: 1,
+		others: 0,
+		failed: 0,
+		durationMs: 42_000,
+		inputTokens: 12400,
+		outputTokens: 3100,
+		cacheRead: 210_000,
+		cacheWrite: 45_000,
+		reasoning: 0,
+		cost: 0.05,
+		turns: 4,
+		model: "glm-5.3-flash",
+		tokensPerSec: 42,
+		endedAt: 42_000,
+	};
+	const colors = { success: "\x1b[32m", failed: "\x1b[31m" };
+	// keys 含 model（🤖 段）+ tokens（多数字段），验证 /g 与跳过并存
+	const out = summaryMarkdown(data, colors, {
+		keys: ["model", "tokens"],
+	});
+	// tokens 段：两个数字都被补色（/g 修复的回归锁定）
+	assert.match(out, /↑\x1b\[32m12\.4k\x1b\[0m ↓\x1b\[32m3\.1k\x1b\[0m tok/);
+	// 🤖 段：版本号是标识符非指标，不补色、无串中 reset
+	assert.match(out, /🤖 glm-5\.3-flash/);
+	assert.ok(!out.includes("🤖 glm-\x1b[32m5.3"), "model 段版本号不应被着色");
+});

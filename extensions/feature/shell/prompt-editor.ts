@@ -38,7 +38,7 @@ let sessionNameSource: (() => string | undefined) | undefined;
 /** app 主题（ctx.ui.theme）：会话名 dim 色用；编辑器自带 theme（EditorTheme）无 fg。 */
 let appTheme: { fg?: (color: string, text: string) => string } | undefined;
 
-export function setEditorTheme(
+export function setAppTheme(
 	theme: { fg?: (color: string, text: string) => string } | undefined,
 ): void {
 	appTheme = theme;
@@ -62,6 +62,12 @@ function currentSessionName(): string | undefined {
  * 放不下（填充 < 2 列）返回 undefined，调用方回退 super 的原生边框。
  * 纯函数：宽度与 ANSI 均由入参给定，可单测。
  */
+const MIN_BORDER_WIDTH = 20;
+const NAME_MAX_COLUMNS = 40;
+const NAME_MAX_WIDTH_RATIO = 0.4;
+/** Working 状态块预留 = 左右饰边 4 列 + 最小填充 2 列；须与 sessionNameBorderLine 宽度账目一致。 */
+const STATUS_BORDER_RESERVE = 5;
+
 export function sessionNameBorderLine(opts: {
 	width: number;
 	name: string;
@@ -70,11 +76,14 @@ export function sessionNameBorderLine(opts: {
 	dim: (text: string) => string;
 }): string | undefined {
 	const { width, borderColor, dim } = opts;
-	if (width < 20) return undefined;
-	// 名字上限：min(40 列, 40% 宽度)；空名则放弃。
+	if (width < MIN_BORDER_WIDTH) return undefined;
+	// 名字上限：min(NAME_MAX_COLUMNS, 宽度×NAME_MAX_WIDTH_RATIO)；空名则放弃。
 	const name =
 		visibleWidth(opts.name) > 0
-			? truncateName(opts.name, Math.min(40, Math.floor(width * 0.4)))
+			? truncateName(
+					opts.name,
+					Math.min(NAME_MAX_COLUMNS, Math.floor(width * NAME_MAX_WIDTH_RATIO)),
+				)
 			: "";
 	if (!name) return undefined;
 	const status = opts.status ?? "";
@@ -135,7 +144,9 @@ export class PromptEditor extends CustomEditor {
 		let status: string | undefined;
 		if (this.embedWorkingStatus && self.workingStatusIndicator) {
 			try {
-				const raw = self.workingStatusIndicator.renderInBorder(Math.max(1, width - 5));
+				const raw = self.workingStatusIndicator.renderInBorder(
+					Math.max(1, width - STATUS_BORDER_RESERVE),
+				);
 				if (visibleWidth(raw) > 0) status = raw;
 			} catch {
 				// 指示器会话失效等异常：按空闲态渲染。
@@ -200,6 +211,8 @@ function releasePromptEditor(ctx: ExtensionContext): void {
 	const previous = previousEditorFactory;
 	active = false;
 	previousEditorFactory = undefined;
+	// 解绑 history 引用：避免 flushPendingInject 把注入批次回放到已释放的旧实例。
+	bindHistoryEditor(undefined);
 	if (ctx.ui.getEditorComponent?.() === previous) return;
 	ctx.ui.setEditorComponent(previous);
 }
@@ -219,10 +232,10 @@ export function applyPromptEditor(ctx: ExtensionContext): void {
 	if (!ctx?.hasUI || typeof ctx.ui?.setEditorComponent !== "function") return;
 	// 会话名渲染需要 app 主题（dim 色）与实时会话名；此处注入，渲染时读取。
 	setSessionNameSource(() => ctx.sessionManager?.getSessionName?.());
-	const editorTheme = (
+	const appTheme = (
 		ctx.ui as unknown as { theme?: { fg?: (color: string, text: string) => string } }
 	).theme;
-	setEditorTheme(editorTheme);
+	setAppTheme(appTheme);
 	if (!config.enableEditorPrefix) {
 		releasePromptEditor(ctx);
 		return;

@@ -12,6 +12,7 @@ import { isRecallableInput } from "./filter.ts";
 import {
 	DEFAULT_READ_LIMIT,
 	hasHistoryFile,
+	MAX_DISPLAY_CHARS,
 	writeInitialEntries,
 	type HistoryEntry,
 } from "./store.ts";
@@ -75,7 +76,9 @@ async function extractFromFile(filePath: string, fallbackTime: number): Promise<
 		const { role } = parsed.message;
 		if (role === "user") {
 			const text = extractText(parsed.message.content).trim();
-			if (isRecallableInput(text)) entries.push({ display: text, sessionId, timestamp: time });
+			// 提取时即截断：避免大粘贴语料在 seed 期间全量驻留内存（写入侧还会再截，双保险）。
+			if (isRecallableInput(text))
+				entries.push({ display: text.slice(0, MAX_DISPLAY_CHARS), sessionId, timestamp: time });
 			continue;
 		}
 		if (role === "bashExecution") {
@@ -83,7 +86,11 @@ async function extractFromFile(filePath: string, fallbackTime: number): Promise<
 				typeof parsed.message.command === "string" ? parsed.message.command.trim() : "";
 			if (command.length === 0) continue;
 			const prefix = parsed.message.excludeFromContext === true ? "!!" : "!";
-			entries.push({ display: `${prefix}${command}`, sessionId, timestamp: time });
+			entries.push({
+				display: `${prefix}${command}`.slice(0, MAX_DISPLAY_CHARS),
+				sessionId,
+				timestamp: time,
+			});
 		}
 	}
 	return entries;

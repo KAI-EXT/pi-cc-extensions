@@ -62,6 +62,8 @@ export interface ReverseSearchOptions {
 	dimColor: (text: string) => string;
 	toolColor: (text: string) => string;
 	borderColor: (text: string) => string;
+	/** hover 行背景（可选）：包裹整行含尾部空白；缺省回退内置暗灰蓝（浅色终端对比度差）。 */
+	hoverColor?: (text: string) => string;
 	done: (value: string | null) => void;
 	/** 当前时间（测试注入）。 */
 	now?: number;
@@ -223,12 +225,16 @@ export class ReverseSearch implements Component {
 		const start = this.windowStart;
 		const end = Math.min(entries.length, start + this.visibleRows);
 		const listLines: string[] = [];
-		const HOVER_BG = "\x1b[48;2;58;63;75m"; // hover 行背景（暗灰蓝）
+		const HOVER_BG = "\x1b[48;2;58;63;75m"; // hover 行背景（暗灰蓝，主题未注入时的回退）
 		for (let i = start; i < end; i++) {
 			const row = this.formatRow(entries[i], i, start, end, entries.length, listWidth);
 			// hover 背景覆盖整行宽（含文本后的空白），行尾恢复默认背景
 			listLines.push(
-				this.hoverIndex === i ? `${HOVER_BG}${padEndVisible(row, listWidth)}\x1b[49m` : row,
+				this.hoverIndex === i
+					? this.options.hoverColor
+						? this.options.hoverColor(padEndVisible(row, listWidth))
+						: `${HOVER_BG}${padEndVisible(row, listWidth)}\x1b[49m`
+					: row,
 			);
 		}
 		if (entries.length === 0) {

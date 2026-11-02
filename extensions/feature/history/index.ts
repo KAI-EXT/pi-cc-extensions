@@ -116,6 +116,13 @@ async function openReverseSearch(): Promise<void> {
 					return text;
 				}
 			};
+			const bg = (color: "customMessageBg", text: string): string => {
+				try {
+					return theme.bg(color, text);
+				} catch {
+					return text;
+				}
+			};
 			return new ReverseSearch({
 				entries: currentEntries,
 				currentSessionId: sessionIdOf(ctx),
@@ -128,6 +135,7 @@ async function openReverseSearch(): Promise<void> {
 				dimColor: (text) => fg("dim", text),
 				toolColor: (text) => fg("toolOutput", text),
 				borderColor: (text) => fg("border", text),
+				hoverColor: (text) => bg("customMessageBg", text),
 				done,
 			});
 		});

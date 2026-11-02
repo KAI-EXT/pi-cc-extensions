@@ -41,8 +41,8 @@ export default function (pi: ExtensionAPI): void {
 
 	// 输入框 ❯ 提示符：session_start 时按配置应用；setEditorComponent 是一次性替换。
 	// 引擎口径同场刷新：session_start 的 ctx.model 已含恢复/继承的模型。
-	// 注意：此监听必须先于 installInputHistory 注册——历史注入依赖 applyPromptEditor
-	// 已同步完成 bindHistoryEditor（pi 事件按注册顺序触发）。
+	// 注入与绑定顺序无关：injectHistory 把批次暂存 pendingInject，编辑器实例创建时
+	// bindHistoryEditor 会自动回放（factory 同步绑定），谁先谁后都能到达编辑器。
 	pi.on("session_start", (_event, ctx) => {
 		refreshTokenSpeedOptions(ctx.model?.provider);
 		applyPromptEditor(ctx);
