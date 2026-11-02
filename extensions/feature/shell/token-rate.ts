@@ -324,7 +324,7 @@ function formatStatsElapsed(elapsedMs: number, foldDuration: boolean): string {
 }
 
 /**
- * 非 legacy 显示模式的芯片文本（pi-token-speed 语义，图标仍由 footer 作芯片前缀）：
+ * 非 legacy 显示模式的标签文本（pi-token-speed 语义，图标仍由 footer 作标签前缀）：
  * tps `25 tok/s` / ttft `25 tok/s (TTFT: 450ms)` / stats `25 tok/s (150 tok in 6.0s)` /
  * full 合并 `(... · TTFT: 450ms)`。速率数字按四档着色（paintValue，同 legacy）；
  * displayColors 给 count/elapsed/ttft 后缀段分色，缺省不上色。legacy 由调用方走

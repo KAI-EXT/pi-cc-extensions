@@ -85,7 +85,7 @@ export interface AgentSummaryViewConfig {
 	doneDate?: boolean;
 	/** 整行斜体（markdown *…*）；false 直体。 */
 	italic?: boolean;
-	/** 传入时 rate 段数字按 tokenSpeed 四档真彩着色（与 footer 芯片共用取档函数）；缺省不着色。 */
+	/** 传入时 rate 段数字按 tokenSpeed 四档真彩着色（与 footer 标签共用取档函数）；缺省不着色。 */
 	tokenSpeed?: TokenSpeedConfig;
 }
 
@@ -217,7 +217,7 @@ function summaryParts(data: AgentSummaryData, options: AgentSummaryViewConfig): 
 				}
 				break;
 			case "cache-hit": {
-				// 命中率与 footer 芯片同算法：cacheRead / (input + cacheWrite + cacheRead)，回合累计值
+				// 命中率与 footer 标签同算法：cacheRead / (input + cacheWrite + cacheRead)，回合累计值
 				const denom = data.inputTokens + data.cacheWrite + data.cacheRead;
 				if (!denom) break;
 				const pct = `${Math.floor((data.cacheRead * 100) / denom)}%`;

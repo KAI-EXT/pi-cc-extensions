@@ -68,7 +68,7 @@ test("已连接：来源路径对不上时按 namespace 兜底", () => {
 	);
 });
 
-test("芯片文案：已连接/并集，两边都空时不显示", () => {
+test("标签文案：已连接/并集，两边都空时不显示", () => {
 	assert.equal(formatMcpChip([], []), undefined);
 	// `-` 与 `_` 去重后只算一台
 	assert.equal(formatMcpChip(["chrome_devtools"], ["chrome-devtools"]), "MCP 1/1");
@@ -144,7 +144,7 @@ test("组装：工具与命令读 pi API，ctx 只提供 cwd / trust", () => {
 	}
 });
 
-test("接管判定：/mcp 归内置时才显示本芯片", () => {
+test("接管判定：/mcp 归内置时才显示本标签", () => {
 	assert.equal(
 		builtinMcpOwnsCommand([{ name: "mcp", sourceInfo: { path: BUILTIN_MCP_SOURCE } }]),
 		true,

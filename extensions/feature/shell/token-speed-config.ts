@@ -1,14 +1,14 @@
 /**
  * tokenSpeed 配置段（源自 pi-token-speed，MIT）。
  * P1 配置层：类型 + 默认值 + 校验；P3 起提供渲染侧取档/取色函数（tokenSpeedTier /
- * tokenSpeedRateAnsi），footer 速率芯片与摘要行 rate 段共用。
+ * tokenSpeedRateAnsi），footer 速率标签与摘要行 rate 段共用。
  * P4：display 显示模式族、displayColors 后缀分色、providerOverrides 按 provider 深合并
  * （resolveTokenSpeed），引擎口径按活动模型 provider 在入口刷新。
  */
 
 export type TokenSpeedCountStrategy = "estimate" | "direct";
 export type TokenSpeedEndTpsBehavior = "average" | "last";
-/** 芯片形态：legacy 沿用 avg/live 标签，其余为 pi-token-speed 显示模式语义。 */
+/** 标签形态：legacy 沿用 avg/live 标签，其余为 pi-token-speed 显示模式语义。 */
 export type TokenSpeedDisplay = "legacy" | "tps" | "ttft" | "stats" | "full";
 /** 非 legacy 显示模式，渲染层按此分支。 */
 export type TokenSpeedNonLegacyDisplay = Exclude<TokenSpeedDisplay, "legacy">;
@@ -42,9 +42,9 @@ export interface TokenSpeedConfig {
 	colors: TokenSpeedColors;
 	/** 默认 ⚡；空串 = 无图标。 */
 	icon: string;
-	/** legacy 芯片 live 模式速率前缀（如 "live"）；空串 = 无前缀。 */
+	/** legacy 标签 live 模式速率前缀（如 "live"）；空串 = 无前缀。 */
 	liveLabel: string;
-	/** legacy 芯片 average 模式速率前缀（默认 "avg"，与 liveLabel 对齐）；空串 = 无前缀。 */
+	/** legacy 标签 average 模式速率前缀（默认 "avg"，与 liveLabel 对齐）；空串 = 无前缀。 */
 	avgLabel: string;
 	countStrategy: TokenSpeedCountStrategy;
 	endTpsBehavior: TokenSpeedEndTpsBehavior;
@@ -53,7 +53,7 @@ export interface TokenSpeedConfig {
 	/** 保留键不再生效：已验证 pi TUI 渲染管线合帧（requestRender 去重 + 16ms 帧节流），恒为 0。 */
 	updateInterval: number;
 	formatDuration: boolean;
-	/** 芯片显示形态，默认 legacy（零破坏）。 */
+	/** 标签显示形态，默认 legacy（零破坏）。 */
 	display: TokenSpeedDisplay;
 	/** 非 legacy 模式的后缀分色，缺省不上色。 */
 	displayColors: TokenSpeedDisplayColors;
@@ -307,7 +307,7 @@ export function hexToTruecolor(hex: string): string {
 }
 
 /**
- * 速率数值的 ANSI truecolor 开码：footer 速率芯片与摘要行 rate 段共用的取色函数。
+ * 速率数值的 ANSI truecolor 开码：footer 速率标签与摘要行 rate 段共用的取色函数。
  * 只返回开码，收尾序列由调用方按上下文选择（footer 恢复主题 dim，摘要行 \x1b[0m）。
  */
 export function tokenSpeedRateAnsi(rate: number, speed: TokenSpeedConfig): string {

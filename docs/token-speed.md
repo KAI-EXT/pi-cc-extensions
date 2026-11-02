@@ -17,10 +17,10 @@ pi 在流式生成回复时，`tokenSpeed` 负责**测量并展示生成速度**
 
 | 位置 | 前提 |
 |---|---|
-| 底部状态栏 rate 芯片 | `footerLine1Keys`（或 `footerLine2/3Keys`）中包含 `"rate"`，且 `footerTokenRate: true` |
+| 底部状态栏 rate 标签 | `footerLine1Keys`（或 `footerLine2/3Keys`）中包含 `"rate"`，且 `footerTokenRate: true` |
 | 回合摘要行 `rate` 段 | `agentSummaryKeys` 中包含 `"rate"` |
 
-两处都**只在模型流式输出过之后**才有数值——刚开会话没有速率数据时芯片/段落自动隐藏。
+两处都**只在模型流式输出过之后**才有数值——刚开会话没有速率数据时标签/段落自动隐藏。
 
 **生效方式**：改完配置保存，在 pi 里执行 `/reload`（渲染时实时读配置，无需重启）。
 **校验原则**：字段级非法逐项回落默认；仅 `thresholds` 是整块校验（任一非法整块回落）。
@@ -61,7 +61,7 @@ pi 在流式生成回复时，`tokenSpeed` 负责**测量并展示生成速度**
 
 hex 格式（`#RRGGBB`），**逐色校验**：写错的那个色回落默认，其余生效。当前版本不支持关闭着色（四档色默认生效，已拍板）；不想用彩色可把四色都设为主题近似色。
 
-### `display` — 芯片形态
+### `display` — 标签形态
 
 | 值 | 效果示例 |
 |---|---|
@@ -87,9 +87,9 @@ hex 格式（`#RRGGBB`），**逐色校验**：写错的那个色回落默认，
 
 与 `colors` 相互独立，可同时使用。
 
-### `icon` — 芯片图标
+### `icon` — 标签图标
 
-- `"⚡"`（默认）：芯片显示 `⚡ 25 tok/s`
+- `"⚡"`（默认）：标签显示 `⚡ 25 tok/s`
 - `""`：无图标，纯 `25 tok/s`
 - 任意字符均可：`🔥` / `💨` / `🚀` / `🎯` …
 
@@ -107,7 +107,7 @@ hex 格式（`#RRGGBB`），**逐色校验**：写错的那个色回落默认，
 | `average` | 定格为整段平均（总 token ÷ 总耗时） |
 | `last`（默认） | 定格为流结束时最后一个滑动窗口读数（看收尾速度） |
 
-### `liveLabel` / `avgLabel` — legacy 芯片速率前缀
+### `liveLabel` / `avgLabel` — legacy 标签速率前缀
 
 `legacy` 显示模式下速率数字前的文字标签：
 
@@ -176,7 +176,7 @@ hex 格式（`#RRGGBB`），**逐色校验**：写错的那个色回落默认，
 │ ⚡ 9m55s · ↑12.4k ↓3.1k tok · ↗45k ↘210k cache · 󰆼 78% · 25 tok/s · ⛏ bash×3 · done 19:24
 ```
 
-底部状态栏芯片：`25 tok/s`（25 落在 medium 档 → 数字橙色 `#ffaa00`）。
+底部状态栏标签：`25 tok/s`（25 落在 medium 档 → 数字橙色 `#ffaa00`）。
 
 ### 案例 2：`"display": "full"` + `displayColors` 三色
 
@@ -220,13 +220,13 @@ hex 格式（`#RRGGBB`），**逐色校验**：写错的那个色回落默认，
 }
 ```
 
-用 GLM（magpie）时芯片是简洁的 `42 tok/s`；切到 Anthropic 模型自动变成完整面板且阈值放宽（其流式速度通常更高）。
+用 GLM（magpie）时标签是简洁的 `42 tok/s`；切到 Anthropic 模型自动变成完整面板且阈值放宽（其流式速度通常更高）。
 
 ---
 
 ## 常见问题
 
-**Q：芯片完全不显示？**
+**Q：标签完全不显示？**
 按序检查：① `footerLine*Keys` 是否包含 `"rate"`；② `footerTokenRate` 是否为 `true`；③ 是否已经有过一轮流式输出（无数据时隐藏）。
 
 **Q：为什么我的速率是灰色/没有颜色？**
@@ -252,12 +252,12 @@ hex 格式（`#RRGGBB`），**逐色校验**：写错的那个色回落默认，
 | `colors` | object \| null | 四档默认色 | 档位颜色，hex 逐色校验；`null` 关闭着色 |
 | `display` | enum | `"legacy"` | `legacy`/`tps`/`ttft`/`stats`/`full` |
 | `displayColors` | object | `{}` | 后缀三段分色（count/elapsed/ttft），非 legacy 生效 |
-| `icon` | string | `"⚡"` | 芯片前缀图标；空串 = 无图标 |
+| `icon` | string | `"⚡"` | 标签前缀图标；空串 = 无图标 |
 | `countStrategy` | enum | `"estimate"` | `estimate` 估算 / `direct` 每 delta 1 token |
 | `endTpsBehavior` | enum | `"last"` | 流结束定格：整段平均 / 最后窗口值 |
 | `slidingWindow` | number | `1000` | live 窗口毫秒，100–30000 |
-| `liveLabel` | string | `"live"` | legacy 芯片 live 模式速率前缀，空串隐藏 |
-| `avgLabel` | string | `"avg"` | legacy 芯片 average 模式速率前缀，空串隐藏 |
+| `liveLabel` | string | `"live"` | legacy 标签 live 模式速率前缀，空串隐藏 |
+| `avgLabel` | string | `"avg"` | legacy 标签 average 模式速率前缀，空串隐藏 |
 | `updateInterval` | number | `0` | **已失效保留键**（pi 已合帧） |
 | `formatDuration` | boolean | `false` | 耗时人类可读化（`1m 32.3s`） |
 | `providerOverrides` | object | `{}` | 按 provider 精确串覆盖子集 |

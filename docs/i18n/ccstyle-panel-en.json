@@ -167,7 +167,7 @@
   "footerCurrency.label": "Cost currency",
   "footerCurrency.desc": "ISO code for the status-bar cost. Switching currency fills its preset rate. USD clears the rate.",
   "footerCurrencyRate.label": "Cost rate",
-  "footerCurrencyRate.desc": "Display units per 1 USD of cost. Switching currency replaces this. Empty keeps the number and only changes the symbol.",
+  "footerCurrencyRate.desc": "Display units per 1 unit of the cost currency. Switching currency replaces this. Empty keeps the number and only changes the symbol.",
   "footerNerdIcons.label": "Nerd Font icons",
   "footerNerdIcons.desc.on": "Git and cache chips use Nerd Font glyphs. Turn off for plain text.",
   "footerNerdIcons.desc.off": "Git and cache chips use plain text. No Nerd Font required.",

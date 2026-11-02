@@ -32,7 +32,7 @@ pi install git:github.com/KAI-EXT/pi-cc-extensions
 | Claude Code UI        | 工具摘要、折叠展开、rich edit/write diff，以及`on` / `compact` / `off` 三种模式 | `/ccstyle`                                      |
 | Markdown 增强         | Mermaid 方言渲染、圈数字转半角括号                                                         | 自动生效；`enableMarkdownEnhance: false` 关闭   |
 | Fullscreen mode       | 工具卡/group 单击展开与收起、预览、hover 高亮、回到底部按钮                 | `TUIMODE=fullscreen` 或 `--tui-mode fullscreen` |
-| 配置面板              | `Style / Features / UI / Diff / Thinking / Footer / Token Speed` 七页签；Token Speed 页签含 tokenSpeed 可视化编辑（显示模式/图标/计数策略/结束行为/滑动窗口/四档阈值/四档色，provider 覆盖只读展示），Features 页签含 agentSummary 段开关与日期/斜体切换；会话名称可显示在输入框顶边框右侧或状态栏目录芯片后 | `/ccstyle`                                      |
+| 配置面板              | `Style / Features / UI / Diff / Thinking / Footer / Token Speed` 七页签；Token Speed 页签含 tokenSpeed 可视化编辑（显示模式/图标/计数策略/结束行为/滑动窗口/四档阈值/四档色，provider 覆盖只读展示），Features 页签含 agentSummary 段开关与日期/斜体切换；会话名称可显示在输入框顶边框右侧或状态栏目录标签后 | `/ccstyle`                                      |
 | 上下文检查            | 查看上下文占用，并预览 System prompt、Memory、Skills、Tools definition 和消息内容 | `/context`                                      |
 | 输入历史              | 跨会话持久化输入历史（含 `!`/`!!` bash 命令，保留前缀语义）；全新会话、resume、运行中 `/resume`、`/reload` 后均可 ↑/↓ 召回，`Ctrl+R` 模糊反搜（session / project / everywhere 三档，`ctrl+s` 切换，默认当前会话；界面中文本地化；时间列、滚动位置 ↑/↓ 指示、右侧全文预览，样式对齐 Claude；鼠标点击选择（hover 高亮 + 预览跟随），行数可配 `inputHistoryVisibleRows` 默认 8；鼠标需 fullscreen 模式）；首次使用自动从既有会话聚合存量 | 自动生效；`enableInputHistory: false` 关闭；存储于 `~/.pi/agent/pi-cc-extensions/input-history/`（每项目一个文件，文件名为项目路径的 slug：与 pi 会话目录同构的 `--路径-slug--.jsonl` 格式，路径中的 `/` 替换为 `-`、中文保留，超长截断加短 hash 后缀） |
 | Session/Subagent 引用 | 搜索并注入历史 Session 或会话中已有 SubAgent 的有效上下文                             | `@`                                             |
@@ -71,7 +71,7 @@ pi install git:github.com/KAI-EXT/pi-cc-extensions
   "stickyUserMessage": true,               // fullscreen：userMessage 正文首行滚出视口上沿后钉住，直到下一条指令接手
   "scrollButtonMode": "dock",              // fullscreen：dock 独占行 / native Pi 原生浮层
   "showSessionName": true,                 // 会话名称展示开关
-  "sessionNamePosition": "border",         // border：输入框顶边框右侧（Working 同行）；cwd：状态栏目录芯片后
+  "sessionNamePosition": "border",         // border：输入框顶边框右侧（Working 同行）；cwd：状态栏目录标签后
 
   // diff
   "diffViewMode": "auto",                  // 布局：auto / split / unified
@@ -88,23 +88,24 @@ pi install git:github.com/KAI-EXT/pi-cc-extensions
 
   // footer
   "enableCustomFooter": true,              // 自定义状态栏
-  "footerTokenRate": true,                 // 输出速率芯片；false 隐藏
+  "footerTokenRate": true,                 // 输出速率标签；false 隐藏
   "footerTokenRateMode": "average",        // average：整段指令平均；live：最近 1 秒瞬时（live 模式带 live 前缀）
-  "footerTokenRateTtft": true,             // 速率芯片是否带 TTFT；false 只显示 tok/s
-  "footerTotalTokens": true,               // 会话 token 芯片（Σ 总量 · ↑ 输入 · ↓ 输出 · 缓存图标）；false 隐藏
+  "footerModelNameMode": "id",             // 模型标签显示：id（默认，provider/id 形式）；name：目录友好名，缺 name 回退 id
+  "footerTokenRateTtft": true,             // 速率标签是否带 TTFT；false 只显示 tok/s
+  "footerTotalTokens": true,               // 会话 token 标签（Σ 总量 · ↑ 输入 · ↓ 输出 · 缓存图标）；false 隐藏
                                            // 效果：Σ 2.1M ↑ 1.1M ↓ 45k 󰆼 980k（会话累计，含子代理用量）
-  "footerCurrency": "USD",                 // 底栏费用的显示币种
+  "footerCurrency": "USD",                 // 状态栏费用的显示币种
   "footerCurrencyRate": null,              // 1 单位费用换成多少显示币种；null 只换符号、不乘倍率
   "footerNerdIcons": true,                 // git/缓存用 Nerd Font 图标；false 为纯文本
   "footerGitStatsMode": "working",         // working（默认）：未提交改动；branch：分支累计净改动
-  "footerHiddenKeys": [],                  // 隐藏的芯片 key
-  "footerLine1Keys": ["cwd", "pi-usage", "git", "model", "context", "cache", "rate", "total-tokens"], // 每行芯片顺序；内置项与插件同一套排布
+  "footerHiddenKeys": [],                  // 隐藏的标签 key
+  "footerLine1Keys": ["cwd", "pi-usage", "git", "model", "context", "cache", "rate", "total-tokens"], // 每行标签顺序；内置项与插件同一套排布
   "footerLine2Keys": [],                   // cwd：目录和会话名；git：分支和改动。可换到任意行
-  "footerLine3Keys": [],                   // 有可见芯片才占行
+  "footerLine3Keys": [],                   // 有可见标签才占行
 
-  // tokenSpeed（输出速率分级，源自 pi-token-speed）：footer 速率芯片与摘要行 rate 段按四档色着色
+  // tokenSpeed（输出速率分级，源自 pi-token-speed）：footer 速率标签与摘要行 rate 段按四档色着色
   // 完整参数说明与效果案例见 docs/token-speed.md
-  // 注意：速率芯片是否显示由 footerLine*Keys 决定——需在其中包含 "rate"。
+  // 注意：速率标签是否显示由 footerLine*Keys 决定——需在其中包含 "rate"。
   "tokenSpeed": {
     "thresholds": { "slow": 0, "medium": 15, "fast": 30, "blazing": 45 }, // 四档阈值（tok/s），须非负整数且严格升序；非法整块回落默认
     "colors": {
@@ -113,15 +114,15 @@ pi install git:github.com/KAI-EXT/pi-cc-extensions
       "fast": "#00ff88",
       "blazing": "#44ddff"
     },
-    "icon": "⚡",                            // 芯片图标（默认 ⚡）；空串 = 无图标；可设 🔥/💨/🚀 或任意字符
+    "icon": "⚡",                            // 标签图标（默认 ⚡）；空串 = 无图标；可设 🔥/💨/🚀 或任意字符
     "countStrategy": "estimate",             // estimate（chars/4 估算，CJK 按 1 字 1 token）/ direct（1 delta=1 token，CJK 失真自担）
     "endTpsBehavior": "last",                // last：流结束定格最后窗口值（默认）/ average：定格整段平均
-    "liveLabel": "live",                     // legacy 芯片 live 模式速率前缀；空串隐藏
-    "avgLabel": "avg",                       // legacy 芯片 average 模式速率前缀；空串隐藏，与 liveLabel 对齐默认显示
+    "liveLabel": "live",                     // legacy 标签 live 模式速率前缀；空串隐藏
+    "avgLabel": "avg",                       // legacy 标签 average 模式速率前缀；空串隐藏，与 liveLabel 对齐默认显示
     "slidingWindow": 1000,                   // live 瞬时窗口毫秒，范围 100..30000（30s 硬顶）
     "updateInterval": 0,                     // 保留键不再生效：pi TUI 渲染管线已合帧（去重 + 16ms 帧节流），节流不再需要
     "formatDuration": false,                 // 耗时格式化：92.3s → 1m 32s（stats/full 模式的耗时后缀）
-    "display": "legacy",                     // 芯片形态：legacy（默认，沿用默认格式：无标签，live 模式带 live 前缀）/ tps（`25 tok/s`）/ ttft（`25 tok/s (TTFT: 450ms)`）/ stats（`25 tok/s (150 tok in 6.0s)`）/ full（两段合并，`·` 分隔）
+    "display": "legacy",                     // 标签形态：legacy（默认，沿用默认格式：无标签，live 模式带 live 前缀）/ tps（`25 tok/s`）/ ttft（`25 tok/s (TTFT: 450ms)`）/ stats（`25 tok/s (150 tok in 6.0s)`）/ full（两段合并，`·` 分隔）
     "displayColors": {                       // 非 legacy 模式的后缀分色（token 数/耗时/TTFT 段）；字段缺省不上色，非法 hex 丢弃
       "count": "#00ff88",
       "elapsed": "#ffaa00",
@@ -151,11 +152,11 @@ pi install git:github.com/KAI-EXT/pi-cc-extensions
 | `duration` | `⚡ 9m55s` | 回合墙钟耗时 | — |
 | `tokens` | `↑12.4k ↓3.1k tok` | 输入 / 输出 token | 无 token 上报 |
 | `cache` | `↗45k ↘210k cache` | 缓存流量：↗ 写入（上传）、↘ 命中读取（下载） | provider 未上报缓存 |
-| `cache-hit` | `󰆼 78%` | 缓存命中率 = 命中 ÷（输入 + 写入 + 命中），回合累计值；与 footer 缓存芯片同图标同算法，`footerNerdIcons: false` 时显示为 `hit 78%` | 无缓存数据 |
+| `cache-hit` | `󰆼 78%` | 缓存命中率 = 命中 ÷（输入 + 写入 + 命中），回合累计值；与 footer 缓存标签同图标同算法，`footerNerdIcons: false` 时显示为 `hit 78%` | 无缓存数据 |
 | `reasoning` | `🧠 1.8k` | 思考 token（`output` 的子集） | provider 未上报 |
 | `turns` | `󰑓 4` | 模型请求轮数 | 0 轮 |
 | `model` | `🤖 glm-5.3-flash` | 最后一轮使用的模型 | — |
-| `rate` | `42 tok/s` | 整段平均输出速率，与 footer 速率芯片同源，数字按 tokenSpeed 四档着色；`agent_end` 时定格，会话重放不漂移 | 无速率数据 |
+| `rate` | `42 tok/s` | 整段平均输出速率，与 footer 速率标签同源，数字按 tokenSpeed 四档着色；`agent_end` 时定格，会话重放不漂移 | 无速率数据 |
 | `tools` | `⛏ bash×19 edit×6 read×4` | bash 按调用计，read/edit/write 按文件去重，其余归 `other×N` | 无工具调用 |
 | `cost` | `💰 $0.05` | 本回合累计成本 | 模型未配置单价 |
 | `failed` | `✗1` | 失败的工具调用数 | 0 次失败 |

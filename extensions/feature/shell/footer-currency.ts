@@ -18,7 +18,7 @@ export function presetFooterCurrencyRate(currency: string): number | null {
 	return FOOTER_CURRENCY_RATES[code as keyof typeof FOOTER_CURRENCY_RATES] ?? null;
 }
 
-/** 底栏费用文本。USD 或不支持的币种保持美元写法。没有倍率时只换符号。 */
+/** 状态栏费用文本。USD 或不支持的币种保持美元写法。没有倍率时只换符号。 */
 export function formatFooterCost(cost: number, currency: string, rate: number | null): string {
 	const usd = `$${cost.toFixed(2)}`;
 	if (currency === "USD" || !KNOWN_CURRENCIES.has(currency)) return usd;

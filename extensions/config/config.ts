@@ -27,7 +27,7 @@ export type FooterGitStatsMode = "working" | "branch";
 export type FooterModelNameMode = "id" | "name";
 export type FooterTokenRateMode = "average" | "live";
 export type ScrollButtonMode = "dock" | "native";
-/** 会话名称展示位置：border 输入框顶边框右侧（Working 同行）；cwd 状态栏目录芯片后。 */
+/** 会话名称展示位置：border 输入框顶边框右侧（Working 同行）；cwd 状态栏目录标签后。 */
 export type SessionNamePosition = "border" | "cwd";
 export const SESSION_NAME_POSITIONS: SessionNamePosition[] = ["border", "cwd"];
 
@@ -87,7 +87,7 @@ export type Config = {
 	scrollButtonMode: ScrollButtonMode;
 	/** 会话名称展示开关；位置由 sessionNamePosition 决定。 */
 	showSessionName: boolean;
-	/** 会话名称展示位置：输入框顶边框右侧（border）或状态栏目录芯片后（cwd）。 */
+	/** 会话名称展示位置：输入框顶边框右侧（border）或状态栏目录标签后（cwd）。 */
 	sessionNamePosition: SessionNamePosition;
 	enableSessionReference: boolean;
 	enableSubagentAutocomplete: boolean;
@@ -104,15 +104,15 @@ export type Config = {
 	/** 反搜界面可见行数（列表行数 = 预览框总高，含上下边框）。 */
 	inputHistoryVisibleRows: number;
 	enableCustomFooter: boolean;
-	/** footer 输出速率芯片。关则不显示。 */
+	/** footer 输出速率标签。关则不显示。 */
 	footerTokenRate: boolean;
-	/** footer 会话累计 token 芯片（provider totalTokens：input+output+cacheRead+cacheWrite）。关则不显示。 */
+	/** footer 会话累计 token 标签（provider totalTokens：input+output+cacheRead+cacheWrite）。关则不显示。 */
 	footerTotalTokens: boolean;
 	/** average：整段指令墙钟平均；live：最近 1 秒瞬时速率，空档回退平均。 */
 	footerTokenRateMode: FooterTokenRateMode;
-	/** footer 模型芯片显示模型名的方式：id（含 provider 前缀规则）或 name（catalog 友好名，缺 name 回退 id）。 */
+	/** footer 模型标签显示模型名的方式：id（含 provider 前缀规则）或 name（catalog 友好名，缺 name 回退 id）。 */
 	footerModelNameMode: FooterModelNameMode;
-	/** 速率芯片是否带 TTFT。关则只显示速率。 */
+	/** 速率标签是否带 TTFT。关则只显示速率。 */
 	footerTokenRateTtft: boolean;
 	/** ISO 4217 显示币种。USD 时不换算。 */
 	footerCurrency: string;

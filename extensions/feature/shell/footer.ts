@@ -1,12 +1,12 @@
 /**
- * 自定义底栏：chips + zentui 图标/句子
+ * 自定义状态栏：标签 + zentui 图标/句子
  *
- * 默认第一行：model  thinking · ██████░░░░ 45%/200k · 󰆼 42% · $0.01 · pi-usage · 其余 line1 芯片
- * 默认第二行：cwd in session ·  branch (+16 −1) · 其余 line2 芯片
- * 第三行：仅当 line3 有可见芯片时出现
- * model / context / cache / rate / cost / cwd / git 与插件芯片同一套排布，可换行、调序、隐藏
+ * 默认第一行：model  thinking · ██████░░░░ 45%/200k · 󰆼 42% · $0.01 · pi-usage · 其余 line1 标签
+ * 默认第二行：cwd in session ·  branch (+16 −1) · 其余 line2 标签
+ * 第三行：仅当 line3 有可见标签时出现
+ * model / context / cache / rate / cost / cwd / git 与插件标签同一套排布，可换行、调序、隐藏
  *
- *  - line1 短芯片，· 分隔；缓存用 zentui 󰆼，费用 success
+ *  - line1 短标签，· 分隔；缓存用 zentui 󰆼，费用 success
  *  - line2 用 zentui 句式 in / on + 
  *  - 当前模型用量：优先 pi-usage 的 usage 状态；xAI 等不写 statusline 的供应商由本扩展补拉
  *
@@ -56,7 +56,7 @@ export { parseGitStats } from "./git-stats.ts";
 
 const GIT_REFRESH_INTERVAL_MS = 10_000;
 const USAGE_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
-// 后台连接 MCP 服务器不会触发 footer 重绘，靠这个兜底轮询把芯片刷出来
+// 后台连接 MCP 服务器不会触发 footer 重绘，靠这个兜底轮询把标签刷出来
 const MCP_REFRESH_INTERVAL_MS = 5_000;
 const USAGE_TIMEOUT_MS = 15_000;
 // zentui NERD_DEFAULT_ICONS：git / cacheHit。无 Nerd Font 时留空，只保留文字。
@@ -97,7 +97,7 @@ export function modelChip(
 	return `${theme.fg("accent", modelLabel)} ${thinkingColor(`${symbol} ${level}`)}`;
 }
 
-/** 模型芯片文本：name 模式优先 catalog 友好名（不加 provider 前缀），name 缺失回退 id 规则。 */
+/** 模型标签文本：name 模式优先 catalog 友好名（不加 provider 前缀），name 缺失回退 id 规则。 */
 export function footerModelLabel(
 	mode: FooterModelNameMode,
 	model?: { id: string; name?: string; provider?: string },
@@ -165,10 +165,10 @@ export function formatXaiFooterChip(report: XaiFooterReport): string | undefined
 
 const cachedExtensionStatuses = new Map<string, string>();
 let cachedLocalUsageText = "";
-/** 本包推算的内置 MCP 芯片（含 nerd 图标）；空字符串表示不显示。 */
+/** 本包推算的内置 MCP 标签（含 nerd 图标）；空字符串表示不显示。 */
 let cachedMcpChip = "";
 
-/** 别的扩展（pi-mcp-adapter）自己写了 mcp 状态时不画，避免两个芯片。 */
+/** 别的扩展（pi-mcp-adapter）自己写了 mcp 状态时不画，避免两个标签。 */
 function ownMcpChip(): string {
 	return cachedMcpChip && !cachedExtensionStatuses.has(MCP_STATUS_KEY) ? cachedMcpChip : "";
 }
@@ -204,7 +204,7 @@ function pluginTextsForRender(localUsageChip: string): Map<string, string> {
 }
 
 function layoutFromConfig(): FooterChipLayout {
-	// tokens 是后加的内置芯片：旧配置补齐，升级后默认可见（用户隐藏过则不补）。
+	// tokens 是后加的内置标签：旧配置补齐，升级后默认可见（用户隐藏过则不补）。
 	return ensureFooterTokensKey({
 		footerHiddenKeys: config.footerHiddenKeys,
 		footerLine1Keys: config.footerLine1Keys,
@@ -532,7 +532,7 @@ const createCustomFooterFactory =
 							{ rate: rateValue, ttftMs: currentTtftMs(), runStats: currentRunStats() },
 							paintRate,
 						);
-			// tokenSpeed.icon 非空时作芯片前缀（providerOverrides 命中时用覆盖后的 icon）；空串保持无图标现状。
+			// tokenSpeed.icon 非空时作标签前缀（providerOverrides 命中时用覆盖后的 icon）；空串保持无图标现状。
 			const rateIcon = speed.icon ? `${speed.icon} ` : "";
 			const costLabel =
 				cost || usingSubscription

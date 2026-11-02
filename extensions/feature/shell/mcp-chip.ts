@@ -1,5 +1,5 @@
 /**
- * 内置 MCP 的状态栏芯片。
+ * 内置 MCP 的状态栏标签。
  *
  * pi 的内置 MCP 不写 setStatus：连接状态只在 `/mcp` 菜单里，扩展读不到。这里用公开数据推算
  * 「已连接/已配置」，并在别的扩展接管 `/mcp` 时让位（pi-mcp-adapter 这类扩展自己会写 "mcp" 状态）。
@@ -105,7 +105,7 @@ export function configuredMcpServers(options: {
 	return names;
 }
 
-/** 注册了 `/mcp` 的都是内置 MCP；别的扩展接管时它自己会写状态芯片。 */
+/** 注册了 `/mcp` 的都是内置 MCP；别的扩展接管时它自己会写状态标签。 */
 export function builtinMcpOwnsCommand(commands: readonly any[]): boolean {
 	const mcpCommands = (commands ?? []).filter((command) => command?.name === MCP_STATUS_KEY);
 	return (
@@ -114,7 +114,7 @@ export function builtinMcpOwnsCommand(commands: readonly any[]): boolean {
 	);
 }
 
-/** footer 渲染用：当前芯片文案（不含 nerd 图标），不适用时返回 undefined。 */
+/** footer 渲染用：当前标签文案（不含 nerd 图标），不适用时返回 undefined。 */
 export function buildMcpChip(ctx: any, api: any): string | undefined {
 	try {
 		// 工具与命令列表在 pi API 上，ctx 只提供 cwd / trust

@@ -118,9 +118,7 @@ function footerTokenRateModeDescription(mode: FooterTokenRateMode): string {
 }
 
 function footerModelNameModeDescription(mode: FooterModelNameMode): string {
-	return mode === "name"
-		? t("footerModelNameMode.desc.name")
-		: t("footerModelNameMode.desc.id");
+	return mode === "name" ? t("footerModelNameMode.desc.name") : t("footerModelNameMode.desc.id");
 }
 
 function footerTokenRateTtftDescription(enabled: boolean): string {
@@ -133,7 +131,7 @@ function footerGitStatsDescription(mode: FooterGitStatsMode): string {
 		: t("footerGitStatsMode.desc.working");
 }
 
-/** Footer chips 子面板描述：内置芯片标签走 i18n，其余用来源 key 模板（避免 footer-layout → i18n 循环依赖）。 */
+/** Footer chips 子面板描述：内置标签文本走 i18n，其余用来源 key 模板（避免 footer-layout → i18n 循环依赖）。 */
 const FOOTER_CHIP_LABEL_KEYS: Record<string, LocaleKey> = {
 	model: "footerChip.model",
 	context: "footerChip.context",

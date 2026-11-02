@@ -75,9 +75,9 @@ test("normalizeConfig defaults enableCustomFooter on and honors explicit off", (
 		formatConfigStatus(normalizeConfig({ footerTotalTokens: false })),
 		/footerTotalTokens=off/,
 	);
-	// tokens 内置芯片：默认 line1 收尾；旧配置补齐；用户已隐藏/已排布时不补。
+	// tokens 内置标签：默认 line1 收尾；旧配置补齐；用户已隐藏/已排布时不补。
 	assert.ok((DEFAULT_FOOTER_LINE1_KEYS as readonly string[]).includes(FOOTER_TOKENS_KEY));
-	assert.equal(isBuiltinFooterKey(FOOTER_TOKENS_KEY), true, "tokens 须按内置芯片渲染");
+	assert.equal(isBuiltinFooterKey(FOOTER_TOKENS_KEY), true, "tokens 须按内置标签渲染");
 	const legacy = normalizeFooterChipLayout({
 		footerLine1Keys: ["plugin-a"],
 		footerLine2Keys: [],
@@ -154,7 +154,10 @@ test("footerModelLabel prefers catalog name in name mode and falls back to id", 
 	// name 模式显示友好名，不加 provider 前缀
 	assert.equal(footerModelLabel("name", model), "Claude Sonnet 4.5");
 	// name 缺失 / 空串回退 id 规则
-	assert.equal(footerModelLabel("name", { ...model, name: undefined }), "anthropic/claude-sonnet-4-5");
+	assert.equal(
+		footerModelLabel("name", { ...model, name: undefined }),
+		"anthropic/claude-sonnet-4-5",
+	);
 	assert.equal(footerModelLabel("name", { ...model, name: "" }), "anthropic/claude-sonnet-4-5");
 	// 含 / 的 id 保持原样；无模型回退 no-model
 	assert.equal(footerModelLabel("id", { id: "a/b", provider: "p" }), "a/b");

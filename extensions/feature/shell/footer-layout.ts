@@ -1,5 +1,5 @@
 /**
- * 自定义 footer 插件芯片布局：行、顺序、隐藏。
+ * 自定义 footer 插件标签布局：行、顺序、隐藏。
  * 纯函数，供 config 规范化、footer 渲染、配置面板共用。
  */
 
@@ -7,7 +7,7 @@ export const PI_USAGE_KEY = "pi-usage";
 export const PI_USAGE_SOURCE = "@narumitw/pi-usage";
 const LEGACY_PI_USAGE_KEYS = new Set(["localUsage", "piUsage"]);
 
-/** 内置芯片。不是 setStatus key，由本扩展自己画。 */
+/** 内置标签。不是 setStatus key，由本扩展自己画。 */
 export const FOOTER_MODEL_KEY = "model";
 export const FOOTER_CONTEXT_KEY = "context";
 export const FOOTER_CACHE_KEY = "cache";
@@ -32,7 +32,7 @@ export const DEFAULT_FOOTER_LINE1_KEYS = [
 	FOOTER_TOKENS_KEY,
 ] as const;
 
-/** 默认第二行：空（全部芯片已在第一行）。 */
+/** 默认第二行：空（全部标签已在第一行）。 */
 export const DEFAULT_FOOTER_LINE2_KEYS = [] as const;
 
 /** 改成可排布之前就写死的项。pi-usage 不算：旧配置里本来就有它。 */
@@ -46,8 +46,8 @@ const LEGACY_FIXED_FOOTER_KEYS = [
 	FOOTER_GIT_KEY,
 ] as const;
 
-// tokens 不是 legacy 项，但也是内置芯片（画在本扩展，非插件 status）：一并纳入内置集合，
-// 否则用户把它写进行列表时会被当成未知插件芯片渲染为空。
+// tokens 不是 legacy 项，但也是内置标签（画在本扩展，非插件 status）：一并纳入内置集合，
+// 否则用户把它写进行列表时会被当成未知插件标签渲染为空。
 const BUILTIN_FOOTER_KEYS = new Set<string>([...LEGACY_FIXED_FOOTER_KEYS, FOOTER_TOKENS_KEY]);
 
 export function isBuiltinFooterKey(key: string): boolean {
@@ -70,7 +70,7 @@ export const DEFAULT_FOOTER_CHIP_LAYOUT: FooterChipLayout = {
 	footerLine3Keys: [],
 };
 
-/** 别的扩展写的 model 状态与本扩展的模型芯片重名，不当插件芯片接纳。配置里的 model 不受影响。 */
+/** 别的扩展写的 model 状态与本扩展的模型标签重名，不当插件标签接纳。配置里的 model 不受影响。 */
 export function isSkippedFooterStatusKey(key: string): boolean {
 	return key === FOOTER_MODEL_KEY;
 }
@@ -110,7 +110,7 @@ function takeUnique(keys: string[], seen: Set<string>): string[] {
 }
 
 /**
- * 旧配置只排插件芯片，内置项是硬编码的。
+ * 旧配置只排插件标签，内置项是硬编码的。
  * 三条行都没出现过内置 key 时，按原位置补上，已有插件顺序不动。
  */
 function ensureBuiltinKeys(
@@ -135,7 +135,7 @@ function ensureBuiltinKeys(
 	};
 }
 
-/** tokens 是后加的内置芯片：旧配置行列表里没有且未隐藏时，补到 line1 尾部，升级后默认可见。 */
+/** tokens 是后加的内置标签：旧配置行列表里没有且未隐藏时，补到 line1 尾部，升级后默认可见。 */
 export function ensureFooterTokensKey(layout: FooterChipLayout): FooterChipLayout {
 	const known = [...layout.footerLine1Keys, ...layout.footerLine2Keys, ...layout.footerLine3Keys];
 	if (known.includes(FOOTER_TOKENS_KEY) || layout.footerHiddenKeys.includes(FOOTER_TOKENS_KEY)) {
@@ -144,7 +144,7 @@ export function ensureFooterTokensKey(layout: FooterChipLayout): FooterChipLayou
 	return { ...layout, footerLine1Keys: [...layout.footerLine1Keys, FOOTER_TOKENS_KEY] };
 }
 
-/** 跨行去重（line1 → line2 → line3）；旧配置补上内置芯片。 */
+/** 跨行去重（line1 → line2 → line3）；旧配置补上内置标签。 */
 export function normalizeFooterChipLayout(source: Record<string, unknown>): FooterChipLayout {
 	const hasHidden = Array.isArray(source.footerHiddenKeys);
 	const hasAnyLine = [source.footerLine1Keys, source.footerLine2Keys, source.footerLine3Keys].some(
@@ -178,7 +178,7 @@ const BUILTIN_FOOTER_LABEL: Record<string, string> = {
 	[FOOTER_GIT_KEY]: "Branch and change stats",
 };
 
-/** 面板描述用：内置项写明内容，pi-usage 注明来源，其它芯片用来源 setStatus key。 */
+/** 面板描述用：内置项写明内容，pi-usage 注明来源，其它标签用来源 setStatus key。 */
 export function footerChipSource(key: string): string {
 	return key === PI_USAGE_KEY ? PI_USAGE_SOURCE : key;
 }
@@ -300,7 +300,7 @@ export function toggleFooterKeyHidden(layout: FooterChipLayout, key: string): Fo
 	return { ...layout, footerHiddenKeys: [...hidden] };
 }
 
-/** 按行顺序收集可见、且当前有文案的插件芯片文本。 */
+/** 按行顺序收集可见、且当前有文案的插件标签文本。 */
 export function visibleFooterPluginTexts(
 	lineKeys: readonly string[],
 	hiddenKeys: readonly string[],
