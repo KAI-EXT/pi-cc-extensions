@@ -90,6 +90,7 @@ Renderer snapshots for `on` / `compact` modes: [default](./docs/tool-render-exam
   "enableCustomFooter": true,              // custom status bar
   "footerTokenRate": true,                 // output rate chip; false hides it
   "footerTokenRateMode": "average",        // average: whole-prompt avg; live: trailing 1s rate
+  "footerModelNameMode": "id",             // model chip: id (default, provider/id form); name: catalog display name, falls back to id
   "footerTokenRateTtft": true,             // append TTFT to the rate chip; false shows tok/s only
   "footerTotalTokens": true,               // session token chip (Σ total · ↑ in · ↓ out · cache glyph); false hides it
                                            // effect: Σ 2.1M ↑ 1.1M ↓ 45k 󰆼 980k (session-wide, includes subagent usage)

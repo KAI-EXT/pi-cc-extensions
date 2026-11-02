@@ -16,6 +16,7 @@ import {
 	footerGlyphs,
 	formatXaiFooterChip,
 	modelChip,
+	footerModelLabel,
 	parseGitStats,
 } from "../extensions/feature/shell/footer.ts";
 import {
@@ -130,6 +131,36 @@ test("footerGitStatsMode defaults to working and accepts only known modes", () =
 		formatConfigStatus(normalizeConfig({ footerGitStatsMode: "branch" })),
 		/footerGitStats=branch/,
 	);
+});
+
+test("footerModelNameMode defaults to id and accepts only known modes", () => {
+	assert.equal(normalizeConfig({}).footerModelNameMode, "id");
+	assert.equal(normalizeConfig({ footerModelNameMode: "id" }).footerModelNameMode, "id");
+	assert.equal(normalizeConfig({ footerModelNameMode: "name" }).footerModelNameMode, "name");
+	for (const value of ["invalid", "", true, 42, null]) {
+		assert.equal(normalizeConfig({ footerModelNameMode: value }).footerModelNameMode, "id");
+	}
+	assert.match(formatConfigStatus(normalizeConfig({})), /footerModelNameMode=id/);
+	assert.match(
+		formatConfigStatus(normalizeConfig({ footerModelNameMode: "name" })),
+		/footerModelNameMode=name/,
+	);
+});
+
+test("footerModelLabel prefers catalog name in name mode and falls back to id", () => {
+	const model = { id: "claude-sonnet-4-5", name: "Claude Sonnet 4.5", provider: "anthropic" };
+	// 默认 id 模式维持原规则：不含 / 时带 provider 前缀
+	assert.equal(footerModelLabel("id", model), "anthropic/claude-sonnet-4-5");
+	// name 模式显示友好名，不加 provider 前缀
+	assert.equal(footerModelLabel("name", model), "Claude Sonnet 4.5");
+	// name 缺失 / 空串回退 id 规则
+	assert.equal(footerModelLabel("name", { ...model, name: undefined }), "anthropic/claude-sonnet-4-5");
+	assert.equal(footerModelLabel("name", { ...model, name: "" }), "anthropic/claude-sonnet-4-5");
+	// 含 / 的 id 保持原样；无模型回退 no-model
+	assert.equal(footerModelLabel("id", { id: "a/b", provider: "p" }), "a/b");
+	assert.equal(footerModelLabel("name", { id: "a/b", name: "B", provider: "p" }), "B");
+	assert.equal(footerModelLabel("name", undefined), "no-model");
+	assert.equal(footerModelLabel("id", undefined), "no-model");
 });
 
 test("model chip joins effort with a circle instead of a separator dot", () => {

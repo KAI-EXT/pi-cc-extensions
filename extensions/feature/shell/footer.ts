@@ -19,7 +19,7 @@ import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { config } from "../../config/config.ts";
+import { config, type FooterModelNameMode } from "../../config/config.ts";
 import { stripAnsi } from "../../utils/ansi-text.ts";
 import { formatFooterCost } from "./footer-currency.ts";
 import { formatTokenCount } from "../../utils/format.ts";
@@ -95,6 +95,16 @@ export function modelChip(
 	const symbol = EFFORT_SYMBOL[level];
 	if (!symbol) return theme.fg("accent", modelLabel);
 	return `${theme.fg("accent", modelLabel)} ${thinkingColor(`${symbol} ${level}`)}`;
+}
+
+/** 模型芯片文本：name 模式优先 catalog 友好名（不加 provider 前缀），name 缺失回退 id 规则。 */
+export function footerModelLabel(
+	mode: FooterModelNameMode,
+	model?: { id: string; name?: string; provider?: string },
+): string {
+	if (!model) return "no-model";
+	if (mode === "name" && model.name) return model.name;
+	return model.id.includes("/") ? model.id : `${model.provider}/${model.id}`;
 }
 
 /** git 状态符号按职能分色：冲突/落后 error，修改 warning，未跟踪 muted，领先 success。 */
@@ -480,11 +490,7 @@ const createCustomFooterFactory =
 			const usingSubscription =
 				!!model &&
 				["kimi-coding", "xai", "github-copilot", "openai"].includes(model.provider || "");
-			const modelLabel = model
-				? model.id.includes("/")
-					? model.id
-					: `${model.provider}/${model.id}`
-				: "no-model";
+			const modelLabel = footerModelLabel(config.footerModelNameMode, model);
 
 			const thinkingLevelStr = ctx.thinkingLevel || "off";
 			const thinkingColor = theme.getThinkingBorderColor(thinkingLevelStr);

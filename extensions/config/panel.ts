@@ -52,6 +52,7 @@ import {
 	EXPANDED_OUTPUT_MAX_LINES_VALUES,
 	EXPANDED_PREVIEW_MAX_LINES_VALUES,
 	FOOTER_GIT_STATS_MODES,
+	FOOTER_MODEL_NAME_MODES,
 	FOOTER_TOKEN_RATE_MODES,
 	formatExcludeRenderers,
 	getCompactThinkingConfig,
@@ -72,6 +73,7 @@ import {
 	type DiffIndicatorMode,
 	type DiffViewMode,
 	type FooterGitStatsMode,
+	type FooterModelNameMode,
 	type FooterTokenRateMode,
 	type PanelLanguage,
 	type ScrollButtonMode,
@@ -113,6 +115,12 @@ function footerTokenRateModeDescription(mode: FooterTokenRateMode): string {
 	return mode === "live"
 		? t("footerTokenRateMode.desc.live")
 		: t("footerTokenRateMode.desc.average");
+}
+
+function footerModelNameModeDescription(mode: FooterModelNameMode): string {
+	return mode === "name"
+		? t("footerModelNameMode.desc.name")
+		: t("footerModelNameMode.desc.id");
 }
 
 function footerTokenRateTtftDescription(enabled: boolean): string {
@@ -1096,6 +1104,13 @@ export async function showCcstylePanel(
 			currentValue: config.footerTokenRateMode,
 			values: FOOTER_TOKEN_RATE_MODES,
 		};
+		const footerModelNameModeSetting = {
+			id: "footerModelNameMode",
+			label: t("footerModelNameMode.label"),
+			description: footerModelNameModeDescription(config.footerModelNameMode),
+			currentValue: config.footerModelNameMode,
+			values: FOOTER_MODEL_NAME_MODES,
+		};
 		const footerTokenRateTtftSetting = {
 			id: "footerTokenRateTtft",
 			label: t("footerTokenRateTtft.label"),
@@ -1459,6 +1474,12 @@ export async function showCcstylePanel(
 			);
 		});
 		retranslate(() => {
+			footerModelNameModeSetting.label = t("footerModelNameMode.label");
+			footerModelNameModeSetting.description = footerModelNameModeDescription(
+				config.footerModelNameMode,
+			);
+		});
+		retranslate(() => {
 			footerTokenRateTtftSetting.label = t("footerTokenRateTtft.label");
 			footerTokenRateTtftSetting.description = footerTokenRateTtftDescription(
 				config.footerTokenRateTtft,
@@ -1538,6 +1559,15 @@ export async function showCcstylePanel(
 				footerTokenRateModeSetting.currentValue = config.footerTokenRateMode;
 				footerTokenRateModeSetting.description = footerTokenRateModeDescription(
 					config.footerTokenRateMode,
+				);
+				ctx.ui.notify(t("notify.updated", { id, value }), "info");
+				return;
+			}
+			if (id === "footerModelNameMode") {
+				updateConfig({ footerModelNameMode: value as FooterModelNameMode });
+				footerModelNameModeSetting.currentValue = config.footerModelNameMode;
+				footerModelNameModeSetting.description = footerModelNameModeDescription(
+					config.footerModelNameMode,
 				);
 				ctx.ui.notify(t("notify.updated", { id, value }), "info");
 				return;
@@ -1870,6 +1900,7 @@ export async function showCcstylePanel(
 					customFooterSetting,
 					footerTokenRateSetting,
 					footerTokenRateModeSetting,
+					footerModelNameModeSetting,
 					footerTokenRateTtftSetting,
 					footerTotalTokensSetting,
 					footerCurrencySetting,

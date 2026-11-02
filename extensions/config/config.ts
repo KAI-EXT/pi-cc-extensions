@@ -24,6 +24,7 @@ export const PANEL_LANGUAGES: PanelLanguage[] = ["zh", "en"];
 export type DiffViewMode = "auto" | "split" | "unified";
 export type DiffIndicatorMode = "bars" | "classic" | "none";
 export type FooterGitStatsMode = "working" | "branch";
+export type FooterModelNameMode = "id" | "name";
 export type FooterTokenRateMode = "average" | "live";
 export type ScrollButtonMode = "dock" | "native";
 /** 会话名称展示位置：border 输入框顶边框右侧（Working 同行）；cwd 状态栏目录芯片后。 */
@@ -109,6 +110,8 @@ export type Config = {
 	footerTotalTokens: boolean;
 	/** average：整段指令墙钟平均；live：最近 1 秒瞬时速率，空档回退平均。 */
 	footerTokenRateMode: FooterTokenRateMode;
+	/** footer 模型芯片显示模型名的方式：id（含 provider 前缀规则）或 name（catalog 友好名，缺 name 回退 id）。 */
+	footerModelNameMode: FooterModelNameMode;
 	/** 速率芯片是否带 TTFT。关则只显示速率。 */
 	footerTokenRateTtft: boolean;
 	/** ISO 4217 显示币种。USD 时不换算。 */
@@ -145,6 +148,7 @@ export const DIFF_VIEW_MODES: DiffViewMode[] = ["auto", "split", "unified"];
 export const DIFF_INDICATOR_MODES: DiffIndicatorMode[] = ["bars", "classic", "none"];
 export const FOOTER_GIT_STATS_MODES: FooterGitStatsMode[] = ["working", "branch"];
 export const FOOTER_TOKEN_RATE_MODES: FooterTokenRateMode[] = ["average", "live"];
+export const FOOTER_MODEL_NAME_MODES: FooterModelNameMode[] = ["id", "name"];
 export const SCROLL_BUTTON_MODES: ScrollButtonMode[] = ["dock", "native"];
 export const DIFF_SPLIT_MIN_WIDTH_VALUES = ["80", "100", "120", "140", "160", "180"];
 export const DIFF_COLLAPSED_LINES_VALUES = ["0", "12", "24", "36", "48", "80", "120"];
@@ -232,6 +236,7 @@ export const DEFAULT_CONFIG: Config = {
 	footerTokenRate: true,
 	footerTotalTokens: true,
 	footerTokenRateMode: "average",
+	footerModelNameMode: "id",
 	footerTokenRateTtft: true,
 	footerCurrency: "USD",
 	footerCurrencyRate: null,
@@ -416,6 +421,11 @@ export function normalizeConfig(input: unknown): Config {
 			FOOTER_TOKEN_RATE_MODES,
 			DEFAULT_CONFIG.footerTokenRateMode,
 		),
+		footerModelNameMode: pickEnum(
+			source.footerModelNameMode,
+			FOOTER_MODEL_NAME_MODES,
+			DEFAULT_CONFIG.footerModelNameMode,
+		),
 		footerTokenRateTtft: source.footerTokenRateTtft !== false,
 		footerCurrency: normalizeCurrency(source.footerCurrency),
 		footerCurrencyRate: normalizeFooterCurrencyRate(source.footerCurrencyRate),
@@ -551,6 +561,7 @@ export function formatConfigStatus(source: Config = config): string {
 		`footerTokenRate=${source.footerTokenRate ? "on" : "off"}`,
 		`footerTotalTokens=${source.footerTotalTokens ? "on" : "off"}`,
 		`footerTokenRateMode=${source.footerTokenRateMode}`,
+		`footerModelNameMode=${source.footerModelNameMode}`,
 		`footerTokenRateTtft=${source.footerTokenRateTtft ? "on" : "off"}`,
 		`footerCurrency=${source.footerCurrency}`,
 		`footerRate=${source.footerCurrencyRate ?? "-"}`,
